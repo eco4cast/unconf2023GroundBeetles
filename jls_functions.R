@@ -223,9 +223,9 @@ fit_runjags_null_richness <- function (past,
 
   jags_model <- runjags_model(model_file = "jags_null_richness.txt")
 
-  richness_rate          <- past$richness
+  richness               <- past$richness
   trapnights             <- past$trapnights
-  richness               <- round(richness_rate * trapnights)
+  richness_rate          <- richness / trapnights
   N                      <- length(richness)
   log_mean_richness_rate <- log(mean(richness_rate, na.rm = TRUE))  
 
