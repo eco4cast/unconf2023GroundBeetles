@@ -22,10 +22,21 @@ future <- targets_ts %>%
           filter(datetime > forecast_date & datetime < latency_date) |>
           pivot_wider(names_from = "variable", values_from = "observation")
 
+sites               <- unique(past$site_id)
+nsites              <- length(sites)
+null_abundance_fits <- named_null_list(sites)
+null_richness_fits  <- named_null_list(sites)
 
-null_abundance <- fit_runjags_null_abundance(past   = past,
-                                             future = future)
-null_richness  <- fit_runjags_null_richness(past    = past,
-                                             future = future)
+for (i in 1:nsites) {
 
+  past_i   <- past[past$site_id == sites[i], ]
+  future_i <- future[future$site_id == sites[i], ]
+  message("fitting abundance for site ", sites[i])
+  null_abundance_fits[[i]] <- fit_runjags_null_abundance(past   = past_i,
+                                                         future = future_i)
+  message("fitting richness for site ", sites[i])
+  null_richness_fits[[i]]  <- fit_runjags_null_richness(past    = past_i,
+                                                        future = future_i)
+
+}
 

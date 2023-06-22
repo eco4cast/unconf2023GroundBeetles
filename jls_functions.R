@@ -167,8 +167,6 @@ fit_runjags_null_abundance <- function (past,
                                         future, 
                                         control_runjags = runjags_controls( )) {
 
-
-
   jags_model <- runjags_model(model_file = "jags_null_abundance.txt")
 
   abundance_rate          <- past$abundance
@@ -197,21 +195,22 @@ fit_runjags_null_abundance <- function (past,
   runjags.options(silent.jags    = control_runjags$silent_jags, 
                   silent.runjags = control_runjags$silent_jags)
 
-  model_fit <- run.jags(model     = jags_model, 
-                        monitor   = monitor, 
-                        inits     = init(data), 
-                        data      = data, 
-                        n.chains  = control_runjags$nchains, 
-                        adapt     = control_runjags$adapt, 
-                        burnin    = control_runjags$burnin, 
-                        sample    = control_runjags$sample, 
-                        thin      = control_runjags$thin, 
-                        modules   = control_runjags$modules, 
-                        method    = control_runjags$method, 
-                        factories = control_runjags$factories, 
-                        mutate    = control_runjags$mutate, 
-                        summarise = TRUE, 
-                        plots     = FALSE)
+  model_fit <- tryCatch(run.jags(model     = jags_model, 
+                                 monitor   = monitor, 
+                                 inits     = init(data), 
+                                 data      = data, 
+                                 n.chains  = control_runjags$nchains, 
+                                 adapt     = control_runjags$adapt, 
+                                 burnin    = control_runjags$burnin, 
+                                 sample    = control_runjags$sample, 
+                                 thin      = control_runjags$thin, 
+                                 modules   = control_runjags$modules, 
+                                 method    = control_runjags$method, 
+                                 factories = control_runjags$factories, 
+                                 mutate    = control_runjags$mutate, 
+                                 summarise = TRUE, 
+                                 plots     = FALSE), 
+                        error = function(x) {NA})
 
 
 }
@@ -249,22 +248,22 @@ fit_runjags_null_richness <- function (past,
   runjags.options(silent.jags    = control_runjags$silent_jags, 
                   silent.runjags = control_runjags$silent_jags)
 
-  model_fit <- run.jags(model     = jags_model, 
-                        monitor   = monitor, 
-                        inits     = init(data), 
-                        data      = data, 
-                        n.chains  = control_runjags$nchains, 
-                        adapt     = control_runjags$adapt, 
-                        burnin    = control_runjags$burnin, 
-                        sample    = control_runjags$sample, 
-                        thin      = control_runjags$thin, 
-                        modules   = control_runjags$modules, 
-                        method    = control_runjags$method, 
-                        factories = control_runjags$factories, 
-                        mutate    = control_runjags$mutate, 
-                        summarise = TRUE, 
-                        plots     = FALSE)
-
+  model_fit <- tryCatch(run.jags(model     = jags_model, 
+                                 monitor   = monitor, 
+                                 inits     = init(data), 
+                                 data      = data, 
+                                 n.chains  = control_runjags$nchains, 
+                                 adapt     = control_runjags$adapt, 
+                                 burnin    = control_runjags$burnin, 
+                                 sample    = control_runjags$sample, 
+                                 thin      = control_runjags$thin, 
+                                 modules   = control_runjags$modules, 
+                                 method    = control_runjags$method, 
+                                 factories = control_runjags$factories, 
+                                 mutate    = control_runjags$mutate, 
+                                 summarise = TRUE, 
+                                 plots     = FALSE), 
+                        error = function(x) {NA})
 
 }
 
