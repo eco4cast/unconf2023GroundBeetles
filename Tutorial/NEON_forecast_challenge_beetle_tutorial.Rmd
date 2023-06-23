@@ -1,6 +1,10 @@
 ---
 title: "NEON forecast challenge - Ground Beetles"
 author: "EFI RCN 2023 Ground Beetle Group"
+output:
+  md_document: 
+    variant: markdown_github
+    number_sections: true
 date: "`r Sys.Date()`"
 ---
 
