@@ -12,33 +12,38 @@ date: "`r Sys.Date()`"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Introduction
+## Purpose
+This document provides a tutorial on how to prepare and submit forecasts to the [NEON Ecological Forecasting Challenge Beetle Communities Theme](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html). We describe the motivation for and challenges associated with forecasting communities. We suggest forecasts that users could submit that would account for challenges in the beetle communities data and provide an example forecast.
 
-# This R markdown document
-Forecasting tutorial for... What is the target audience? 
+## Motivation
+The motivation for this tutorial is to increase interest and submissions to the Beetle Communities Theme. We believe the general challenges associated with forecasting communities (see below), lack of clarity in how community metrics are calculated, and latency in the availability of the observed data to validate forecasts, have prevented both interest and confidence to submit forecasts. The goal of this tutorial is to remove those barriers to increase users' confidence in forecasting communities and thereby increase numbers of submissions to the Beetle Communities Theme. 
+
+## Target user groups for this tutorial
+This tutorial is intended to be used by forecasters at any stage of expertise, including as a learning tool for those interested in learning about forecasting. At a beginner level, our sample forecasts can be worked through to understand how a community forecast may be built. More advanced users can use the sample forecasts as building blocks for more complex models or choose to tackle one of suggested challenges below. 
+
+## Things you will need to complete this tutorial
+You will need a current version of R (v4.2 or newer) to complete this tutorial. We also recommend the RStudio IDE to work with R. It's also worth checking your Rtools is up to date and compatible with R 4.2, see (https://cran.r-project.org/bin/windows/Rtools/rtools42/rtools.html). 
 
 To complete the workshop via this markdown document the following packages will need to be installed:
 
-* `remotes`
-* `fpp3`
-* `tsibble`
 * `tidyverse`
 * `lubridate`
+* `tsibble`
+* `fable`
+* `remotes` (to install neon4cast from gitHub)
 * `neon4cast` (from github)
 
 The following code chunk should be run to install packages.
 
 ```{r eval = F}
-# install.packages('remotes')
-# # install.packages('fpp3') # package for applying simple forecasting methods
-# install.packages('tsibble') # package for dealing with time series data sets and tsibble objects
-# install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
-# install.packages('lubridate') # working with dates and times
-# remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
-# install.packages('neonstore') # package for downloading and maintaining a local store for a NEON dataset
-# install.packages('fable') # package for running forecasts
+install.packages('remotes')
+install.packages('tsibble') # package for dealing with time series data sets and tsibble objects
+install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
+install.packages('lubridate') # working with dates and times
+remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
+install.packages('fable') # package for running forecasts
 ```
-
-Additionally, R version 4.2 is required to run the neon4cast package. It's also worth checking your Rtools is up to date and compatible with R 4.2, see (https://cran.r-project.org/bin/windows/Rtools/rtools42/rtools.html). 
 
 
 ```{r}
