@@ -228,9 +228,9 @@ fit_runjags_null_richness <- function (past,
   N                      <- length(richness)
   log_mean_richness_rate <- log(mean(richness_rate, na.rm = TRUE))  
 
-  richness_rate_future   <- future$richness
+  richness_future        <- future$richness
   trapnights_future      <- future$trapnights
-  richness_future        <- richness_rate_future * trapnights_future
+  richness_rate_future   <- richness_future / trapnights_future
 
   N_future                <- length(richness_future)
 

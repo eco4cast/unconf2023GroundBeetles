@@ -1,12 +1,12 @@
+# The JAGS library is also required for running this code
+# see https://mcmc-jags.sourceforge.io/ for installation directions.
+
 source("jls_functions.R")
 load_dependencies()
-# jags library must also be installed
-# see https://mcmc-jags.sourceforge.io/
 
 targets_filename <- file.path(".", "beetles-targets.csv.gz")
 
 targets <- read_csv(targets_filename)
-
 
 targets_ts <- targets %>% 
               as_tsibble(index = datetime, key = c(variable,site_id))
@@ -26,6 +26,8 @@ sites               <- unique(past$site_id)
 nsites              <- length(sites)
 null_abundance_fits <- named_null_list(sites)
 null_richness_fits  <- named_null_list(sites)
+
+# each site with a separate model set
 
 for (i in 1:nsites) {
 
