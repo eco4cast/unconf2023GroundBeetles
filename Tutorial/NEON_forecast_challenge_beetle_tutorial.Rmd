@@ -1,11 +1,6 @@
 ---
 title: "NEON forecast challenge - Ground Beetles"
-author: EFI RCN 2023 Ground Beetle Group
-output:
-  md_document: 
-    variant: markdown_github
-    number_sections: true
-    toc: true
+author: "EFI RCN 2023 Ground Beetle Group"
 date: "`r Sys.Date()`"
 ---
 
@@ -21,6 +16,50 @@ The motivation for this tutorial is to increase interest and submissions to the 
 
 ## Target user groups for this tutorial
 This tutorial is intended to be used by forecasters at any stage of expertise, including as a learning tool for those interested in learning about forecasting. At a beginner level, our sample forecasts can be worked through to understand how a community forecast may be built. More advanced users can use the sample forecasts as building blocks for more complex models or choose to tackle one of suggested challenges below. 
+
+## Goals for ecological forecasts of ecological communities
+Ecologists are interested in tracking changes in the **number of individual organisms over time** (count data of abundance). Numbers of each species will change due to births, deaths, and movement in (immigration) or out (emigration) of population. The abundance of an ecological community is the sum of the number of individuals of each species. For example, in a hypothetical community of beetles sampled in Year 1 (time=1) , Species A has 10 individuals, Species B has 40 individuals and Species C has 50 individuals, giving a community abundance of 100. In subsequent years the abundance may increase, decrease or remain constant. The forecast uses this sequence of observations over time to predict how many individuals there will be in the next year (time=2), or a number of years into the future (time n). How far into the future we predict is known as the forecast horizon. The accuracy of the prediction is then compared to new observations and a new prediction is made.
+
+Ecologists are also interested in tracking changes in the **number of species over time** (Species richness over time without species identity) and in species turnover over time steps where the identity of the species is known. In the example above there are three species (A,B,C) but over time this can change if for example Species C  was to decline from 10 to zero individuals then the species richness would be 2, or increase if two  previously unobserved species (D & E) arrive into the community, the species richness would be 4. Note that the loss of A and the arrival of 2 gives a net species richness of 4 but without keeping track of the identity of species we would be unaware of the details of that change.
+
+Ecological communities change for many reasons and so it is important to understand the drivers of changes in abundance or species richness by adding environmental variables into the models. By knowing how species change over time we can use the driving variables to predict the values for the abundance and species richness variables for the ecological communities into the  future, that is to forecast.
+
+## General challenges for forecasting communities
+
+1. Understanding what data you have  
+    a. How data have been cleaned and organized
+    b. Time series and data collection design
+    c. Activity vs. abundance for pitfall sampling methods (see later notes)
+    d. Destructive sampling (individuals are removed from the   environment)
+2. How to handle missing data and/or zeros (are they really zeros or missing?)
+3. When there is latency in validating forecasts, do you use known data or forecasted data (e.g. when you get your beetle ID’s at a later date, do you use your known weather data or do you use your forecasted data on which you made the model?)
+4. What scale are you interested in? Community versus species? Plot versus site?
+5. What covariates are most informative (soil, temperature, other)? How to systematically rule things in or out?
+6. How do lags and variable lags across species impact our forecasts?
+7. How to use multi-species data with different life histories to inform your forecasts?
+
+## Avoiding pitfalls: list of forecast options to address the challenges of forecasting populations and communities  
+
+1. Challenge: Many zeros in the data
+    a. Fit with zero-inflated poisson (ZIP) 
+    b. Fit with negative binomial 
+2. Challenge: Finding the optimal scale
+    a. Compare forecast accuracy at plot vs site level
+3. Challenge: Temporal and spatial variation/variation in scale
+    a. Increase biological complexity
+      i. Landuse types (e.g., NLCD)
+      ii. Climate 
+      iii. Timing pesticide application
+      iv. Disturbance/management events (e.g., prescribed burns)
+4. Challenge: Differences between individuals or species
+    a. Multi species habitat suitability modeling
+    b. Integral projection population modeling
+5. Challenge: Testing various community/diversity metrics & functional diversity indices
+    a. Relative abundance of species 
+    b. Total beetle abundance
+    c. Beetles in functional groups
+    d. Functional dispersion, richness and evenness
+    e. Separating species rare or common species trends 
 
 ## Things you will need to complete this tutorial
 You will need a current version of R (v4.2 or newer) to complete this tutorial. We also recommend the RStudio IDE to work with R. It's also worth checking your Rtools is up to date and compatible with R 4.2, see (https://cran.r-project.org/bin/windows/Rtools/rtools42/rtools.html). 
@@ -121,10 +160,11 @@ targets %>%
 
 We can think about what type of models might be useful to predict these variables at these sites. Below are descriptions of ?? simple models which have been constructed to get you started forecasting:
 
-* model 1 - Null model 
-* model 2 - ARIMA model
-* model 3 - description... 
+* Approach 1 - Null model 
+* Approach 2 - ARIMA model
+* Approach 3 - description... 
 
+## Format the data for fitting a forecast
 ```{r}
 #targets |> duplicates(index = datetime, key  = c(variable,site_id))
 
@@ -146,6 +186,8 @@ future <- targets_ts |>
   pivot_wider(names_from="variable", values_from="observation")
 ```
 
+### Approach 1 - Null model forecast
+
 ```{r}
 ## Compute a simple mean/sd model per site... obviously silly given huge seasonal aspect
 null_richness <- past  %>% 
@@ -158,7 +200,7 @@ null_abundance <- past  %>%
 ```
 
 
-## Visualize the forecast
+### Visualize the forecast
 
 ```{r}
 first4 <- unique(null_richness$site_id)[1:4]
@@ -264,16 +306,8 @@ Check out the NEON4cast R package ([introduction](https://projects.ecoforecast.o
 
 EFI has also produced a package that summarizes the proposed community standards for the common formatting and archiving of ecological forecasts. Such open standards are intended to promote interoperability and facilitate forecast adoption, distribution, validation, and synthesis ([introduction](https://projects.ecoforecast.org/neon4cast-docs/Helpful-Functions.html#efistandards-package) and [github](https://github.com/eco4cast/EFIstandards))
 
-## Other weather variables 
-You can look at what other variables are available in the NOAA weather data. There's information in the [Challenge documentation](https://projects.ecoforecast.org/neon4cast-docs/Shared-Forecast-Drivers.html) too.
-
-```{r}
-df_past %>%
-  filter(site_id == 'ARIK',
-         datetime > ymd('2022-01-01')) |> 
-  dplyr::collect() |> 
-  distinct(variable)
-```
+## Weather variables 
+You can look at weather variables that are available in the NOAA weather data. There's information in the [Challenge documentation](https://projects.ecoforecast.org/neon4cast-docs/Shared-Forecast-Drivers.html) too.
 
 ## File format
 The examples shown here, submit the forecast as a _csv_ file but you can also submit your forecasts in _NetCDF_ format. See information [here](https://projects.ecoforecast.org/neon4cast-docs/Submission-Instructions.html#step-1-forecast-file-format) about the different file formats.
