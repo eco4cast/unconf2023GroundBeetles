@@ -1,5 +1,5 @@
 ---
-title: "NEON forecast challenge - aquatics"
+title: "NEON forecast challenge - Ground Beetles"
 author: EFI RCN 2023 Ground Beetle Group
 output:
   md_document: 
