@@ -195,12 +195,12 @@ future <- targets_ts |>
 ```{r}
 ## Compute a simple mean/sd model per site... obviously silly given huge seasonal aspect
 null_richness <- past  %>% 
-  model(null = MEAN(richness)) %>%
-  forecast(h = "1 year")
+  fabletools::model(null = fable::MEAN(richness)) %>%
+  fabletools::forecast(h = "1 year")
 
 null_abundance <- past  %>%
-  model(null = MEAN(abundance)) %>%
-  forecast(h = "1 year")
+  fabletools::model(null = fable::MEAN(abundance)) %>%
+  fabletools::forecast(h = "1 year")
 ```
 
 

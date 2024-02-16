@@ -1,0 +1,40 @@
+"model { 
+ 
+  # priors
+
+  mu    ~  dnorm(log_mean_abundance_rate, 5)
+
+  # initial state
+
+  log_X[1]      <- mu
+  X[1]          <- exp(log_X[1])
+  abundance[1]  ~  dpois(X[1] * trapnights[1]) 
+
+  # through time
+ 
+  for(i in 2:N) {
+
+    # Process model: no change in mean value
+	
+    X[i]           <- X[i-1]
+   
+    # observation model
+
+    abundance[i]   ~ dpois(X[i] * trapnights[i])
+
+  }
+
+  # forecast
+  
+  X_future[1]         <- X[N]
+  abundance_future[1] ~  dpois(X_future[1] * trapnights_future[1]) 
+  
+  for (i in 2:N_future) {
+  
+    X_future[i]         <- X_future[i - 1]
+	
+	abundance_future[i] ~ dpois(X_future[i] * trapnights_future[i])
+  
+  }
+
+}"
