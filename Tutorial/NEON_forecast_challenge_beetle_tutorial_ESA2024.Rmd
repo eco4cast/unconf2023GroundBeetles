@@ -1,5 +1,5 @@
 ---
-title: "NEON forecast challenge - Ground Beetles"
+title: "ESA 2024 Workshop: NEON forecast challenge - Ground Beetles"
 author: "EFI RCN 2023 Ground Beetle Group"
 output:
   md_document: 
@@ -13,17 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 # Introduction
 ## Purpose
-This document provides a tutorial on how to prepare and submit forecasts to the [NEON Ecological Forecasting Challenge](https://projects.ecoforecast.org/neon4cast-ci/) Beetle Communities [Theme](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html). We describe the motivation for and challenges associated with forecasting communities. We suggest forecasts that users could submit that would account for challenges in the beetle communities data and provide an example forecast.
+This document provides a tutorial on how to prepare and submit forecasts to the [NEON Ecological Forecasting Challenge](https://projects.ecoforecast.org/neon4cast-ci/) Beetle Communities [Theme](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html). 
 
 The challenge has been organized by the Ecological Forecasting Initiative Research Coordination Network ([EFI RCN](https://ecoforecast.org/)).
 
 The objective of the overall forecasting challenge is to predict future observations of ecological data that will be collected and published by the [National Ecological Observatory Network (NEON)](https://www.neonscience.org/). Forecast models can be trained on target data from NEON that have been formatted for the challenge by the EFI RCN team (more on this below).
 
-## Motivation
-The motivation for this tutorial is to increase interest and submissions to the Beetle Communities Theme. We believe the general challenges associated with forecasting communities (see below), lack of clarity in how community metrics are calculated, and latency in the availability of the observed data to validate forecasts, have prevented both interest and confidence to submit forecasts. The goal of this tutorial is to remove those barriers to increase users' confidence in forecasting communities and thereby increase numbers of submissions to the Beetle Communities Theme. 
-
 ## Target user groups for this tutorial
-This tutorial is intended to be used by forecasters at any stage of expertise, including as a learning tool for those interested in learning about forecasting. At a beginner level, our sample forecasts can be worked through to understand how a community forecast may be built. More advanced users can use the sample forecasts as building blocks for more complex models or choose to tackle one of suggested challenges below. 
+This tutorial is intended to be used by forecasters at any stage of expertise and may be used as a learning tool as an introduction to forecasting properties of ecological populations or communities. Below, we provide code for introductory examples to walk through the entire process of creating and submitting a forecast to the NEON Ecological Forecasting challenge. This includes (1) accessing target datasets of NEON ground beetle richness and abundance, (2) accessing climate forecast data to use as drivers in models predicting beetle data, (3) how to use the `fable` package for R to specify and fit models, (4) how to submit a forecast to the forecast challenge. Upon completing this tutorial, participants should be able to create and submit forecasts to the Ground Beetle theme of the EFI RCN NEON forecasting challenge.  
 
 ## Goals for ecological forecasts of ecological communities
 Ecologists are interested in tracking changes in the **number of individual organisms over time** (count data of abundance). Numbers of each species will change due to births, deaths, and movement in (immigration) or out (emigration) of populations. The abundance of an ecological community is the sum of the number of individuals of each species. For example, in a hypothetical community of beetles sampled in Year 1 (time=1) , Species A has 10 individuals, Species B has 40 individuals and Species C has 50 individuals, giving a community abundance of 100. In subsequent years the abundance may increase, decrease or remain constant. A forecast may use this sequence of observations over time to predict how many individuals will occur in the next year (time=2), or a number of years into the future (time n). How far into the future we predict is known as the forecast horizon. The accuracy of the prediction is then compared to new observations and a new prediction is made.
