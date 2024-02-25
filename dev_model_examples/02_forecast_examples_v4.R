@@ -61,8 +61,8 @@ targets_train <- targets %>%
 mod_fits <- targets_train %>% 
   tsibble::fill_gaps() %>%
   fabletools::model(
-    mod_null = fable::MEAN(log1p(abundance)),
-    mod_naive = fable::NAIVE(log1p(abundance))) # random walk model, requires gapfill
+    bet_example_mod_null = fable::MEAN(log1p(abundance)),
+    bet_example_mod_naive = fable::NAIVE(log1p(abundance))) # random walk model, requires gapfill
 
 # make a forecast
 fc_null <- mod_fits %>%
@@ -78,7 +78,11 @@ fc_null %>%
 # n time series to provide an estimate of uncertainty
 fc_null_efi <- fc_null %>% 
   mutate(site_id = my_site) %>% #efi needs a NEON site ID
-  neon4cast::efi_format()
+  neon4cast::efi_format() %>%
+  mutate(
+    project_id = "neon4cast",
+    reference_datetime = forecast_date,
+    duration = "P1W")
 
 # visualize the EFI-formatted submission
 fc_null_efi %>% 
@@ -87,6 +91,25 @@ fc_null_efi %>%
   ggplot(aes(datetime, prediction, color = parameter)) +
   geom_line() +
   facet_grid(model_id ~ .)
+
+
+# submission steps
+#file name format is: theme_name-year-month-day-model_id.csv
+theme_name <- "beetles"
+file_date <- Sys.Date()
+
+# write out the forecast files
+for(i_model_id in fc_null_efi$model_id %>% unique()){
+  
+  fc_to_write <- fc_null_efi %>%
+    dplyr::filter(model_id == i_model_id)
+  
+  forecast_file <- paste0(theme_name,"-",file_date,"-",i_model_id,".csv.gz")
+  write_csv(fc_to_write, forecast_file)
+  
+  # submit the file
+  neon4cast::submit(forecast_file = forecast_file)
+}
 
 
 
@@ -135,7 +158,7 @@ clim_long_ts %>%
 
 # Simple linear model ----
 
-# We will only use one climate model out for now
+# We will only use output from one climate model for now
 clim_model_id <- "CMCC_CM2_VHR4"
 
 # subset into past and future datasets, based on forecast_date
@@ -167,6 +190,7 @@ mod_fit_candidates <- targets_clim_train %>%
 fabletools::report(mod_fit_candidates)
 
 # visualize model fit
+# augment reformats model output into a tsibble for easier plotting
 fabletools::augment(mod_fit_candidates) %>%
   ggplot(aes(x = datetime)) +
   geom_line(aes(y = abundance, color = "Obs")) +
@@ -186,11 +210,12 @@ mod_best_lm <- mod_fit_candidates %>% select(mod_temp)
 report(mod_best_lm)
 
 # make a forecast
+# filter "future" climate data to target climate model
 fc_best_lm <- mod_best_lm %>%
   fabletools::forecast(
     new_data = 
       future_climate_wide %>%
-      dplyr::filter(model_id == "CMCC_CM2_VHR4") %>%
+      dplyr::filter(model_id == clim_model_id) %>%
       as_tsibble(index = datetime)) 
 
 # visualize the forecast
@@ -202,8 +227,15 @@ fc_best_lm %>%
 # for non-normal distributions, efi_format function draws samples to create
 # n time series to provide an estimate of uncertainty
 # https://projects.ecoforecast.org/neon4cast-ci/instructions.html
+# I'm putting "example" in the name so the model does not register as 
+# an official entry to the challenge
+
+# update model name for submission
+efi_model_id <- paste0("bet_example_lm_temp2m_",clim_model_id)
+
+# update dataframe of model output for submission
 fc_climate_mods_efi <- fc_best_lm %>% 
-  mutate(.model = paste0("bet_lm_temp2m_",.model)) %>%
+  mutate(.model = efi_model_id) %>%
   mutate(site_id = my_site) %>% #efi needs a NEON site ID
   neon4cast::efi_format() %>%
   mutate(
@@ -230,10 +262,30 @@ fc_climate_mods_efi %>%
 #file name format is: theme_name-year-month-day-model_id.csv
 theme_name <- "beetles"
 file_date <- Sys.Date()
-model_id <- paste0("bet_lm_temp2m_",clim_model_id)
 
-forecast_file <- paste0(theme_name,"-",file_date,"-",model_id,".csv.gz")
+forecast_file <- paste0(theme_name,"-",file_date,"-",efi_model_id,".csv.gz")
 write_csv(fc_climate_mods_efi, forecast_file)
 
 # submit the file
 neon4cast::submit(forecast_file = forecast_file)
+
+# forecast results here:
+# https://radiantearth.github.io/stac-browser/#/external/raw.githubusercontent.com/eco4cast/neon4cast-ci/main/catalog/scores/models/model_items/bet_lm_temp2m_mod_temp.json?.language=en&.asset=asset-3
+
+
+
+
+# retrieving results - need to wait at least a day for mods to be scored
+my_mod_id <- "bet_lm_temp2m_mod_temp"
+my_mod_id <- "bet_example_mod_null"
+
+my_url <- paste0("s3://anonymous@bio230014-bucket01/challenges/scores/parquet/project_id=neon4cast/duration=P1W/variable=abundance/model_id=",
+                 my_mod_id,
+                 "?endpoint_override=sdsc.osn.xsede.org")
+
+my_mod_results <- arrow::open_dataset(my_url)
+
+my_mod_results %>% names()
+my_mod_results %>% nrow()
+
+my_mod_scores <- my_mod_results %>% filter(!is.na(crps)) %>% collect()
