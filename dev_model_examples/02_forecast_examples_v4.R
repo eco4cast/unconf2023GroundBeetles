@@ -10,6 +10,8 @@
 # libraries ----
 library(tidyverse)
 library(fable)
+library(fabletools)
+library(lubridate)
 
 # helper functions for format for EFI submission
 library(neon4cast) # remotes::install_github("eco4cast/neon4cast", dep=TRUE)
