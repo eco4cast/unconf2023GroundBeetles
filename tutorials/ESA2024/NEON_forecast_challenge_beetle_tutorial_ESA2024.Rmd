@@ -309,7 +309,7 @@ fc_best_lm <- mod_best_lm %>%
 
 # visualize the forecast
 fc_best_lm %>% 
-  autoplot(past) +
+  autoplot(targets_train) +
   facet_grid(.model ~ .)
 
 # format for submission to EFI
