@@ -1,9 +1,13 @@
 # 1 Learning objectives
 
--   Purpose/format of the “Beetle Communities” theme for the NEON
-    Ecological Forecasting Challenge
+-   Overview of the [Beetle
+    Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html)
+    theme for the [NEON Ecological Forecasting
+    Challenge](https://projects.ecoforecast.org/neon4cast-ci/)
 -   How to create a simple forecast for the Beetle Communities theme.
 -   How to submit/score a forecast to evaluate its accuracy.
+-   How to use the NEON Forecast Challenge resources in your research
+    and teaching.
 
 # 2 Things you will need to complete this tutorial
 
@@ -34,6 +38,8 @@ install.packages('tsibble') # package for dealing with time series data sets and
 remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
 ```
 
+Then load the packages.
+
 ``` r
 version$version.string
 ```
@@ -55,9 +61,9 @@ library(neon4cast)
 
 This document provides a tutorial on how to prepare and submit forecasts
 to the [NEON Ecological Forecasting
-Challenge](https://projects.ecoforecast.org/neon4cast-ci/) Beetle
-Communities
-[Theme](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html).
+Challenge](https://projects.ecoforecast.org/neon4cast-ci/) [Beetle
+Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html)
+theme.
 
 ## 3.2 Introduction to NEON forecast challenge
 
@@ -131,8 +137,26 @@ forecasting can be found
 that we are not downloading the target dataset from the NEON data
 portal. Rather, we will download a version of the dataset that has been
 simplified and preformatted for this challenge by the EFI RCN.
+Specifically, the targets are:  
+\* *abundance*: Total number of carabid individuals per trap-night,
+estimated each week of the year at each NEON site \* *richness*: Total
+number of unique ‘species’ in a sampling bout for each NEON site each
+week.
 
-**Where**: All terrestrial NEON sites
+**Where**: All 47 terrestrial [NEON
+sites](https://www.neonscience.org/field-sites/explore-field-sites).
+
+You can load a site list into R using the code below:
+
+``` r
+site_data <- read_csv("https://raw.githubusercontent.com/eco4cast/neon4cast-targets/main/NEON_Field_Site_Metadata_20220412.csv") %>%
+  dplyr::filter(beetles == 1)
+```
+
+For this tutorial, we are going to focus on the [NEON site at
+Ordway-Swisher Biological Station
+(OSBS)](https://www.neonscience.org/field-sites/osbs) located in Domain
+03 (D03) in Florida.
 
 **When**: Target data are available as early as 2013 at some sites, and
 data are available at all sites from 2019 on. Because pitfall trap
