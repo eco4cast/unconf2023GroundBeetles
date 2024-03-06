@@ -535,8 +535,11 @@ all_mod_scores %>%
   ggplot(aes(datetime, crps, color = model_id)) +
   geom_line() +
   theme_bw() +
-  ggtitle("CRPS scores for models predicting beetle abundance at OSBS during 2022")
+  ggtitle("Forecast scores over time at OSBS for 2022")
 ```
+
+ * Which model(s) did best? 
+ * What might explain the differences in scores between the different models?
 
 
 # What's next?
@@ -544,3 +547,6 @@ all_mod_scores %>%
  * The forecasts we created here were relatively simple. What are ideas you have to improve the forecasts? 
  * How could you expand on this forecasting exercise? More sites? Different forecast horizons?
  * How could you apply what you have learned here in your research or teaching?
+ 
+# Acknowledgements
+This tutorial is based in part off of tutorials created by Freya Olsson for the [NEON Forecast Challenge Workshop](https://github.com/OlssonF/NEON-forecast-challenge-workshop/tree/main) and examples created by Carl Boettiger for the [Beetle Communities theme documentation](https://github.com/cboettig/neon-beetles-forecasts/tree/main). 

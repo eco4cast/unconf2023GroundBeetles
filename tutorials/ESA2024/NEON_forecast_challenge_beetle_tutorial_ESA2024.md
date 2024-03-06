@@ -634,12 +634,12 @@ head(fc_best_lm_efi)
     ## # A tibble: 6 × 10
     ##   datetime   site_id parameter model_id    family variable prediction project_id
     ##   <date>     <chr>   <chr>     <chr>       <chr>  <chr>         <dbl> <chr>     
-    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…     0.0483 neon4cast 
-    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…     0.0868 neon4cast 
-    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…    -0.0423 neon4cast 
-    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…    -0.0192 neon4cast 
-    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…     0.0500 neon4cast 
-    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…     0.134  neon4cast 
+    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…    0.105   neon4cast 
+    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…   -0.0178  neon4cast 
+    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…    0.00537 neon4cast 
+    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…    0.00980 neon4cast 
+    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…    0.0789  neon4cast 
+    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…    0.0569  neon4cast 
     ## # ℹ 2 more variables: reference_datetime <chr>, duration <chr>
 
 ``` r
@@ -817,7 +817,7 @@ all_mod_scores %>%
   ggplot(aes(datetime, crps, color = model_id)) +
   geom_line() +
   theme_bw() +
-  ggtitle("CRPS scores for models predicting beetle abundance at OSBS during 2022")
+  ggtitle("Forecast scores over time at OSBS for 2022")
 ```
 
 <img src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/plot forecast scores-1.png" alt="Figure: Forecast scores (CRPS) for models predicting beetle abundance at the OSBS NEON site during the 2022 field season"  />
@@ -825,6 +825,10 @@ all_mod_scores %>%
 Figure: Forecast scores (CRPS) for models predicting beetle abundance at
 the OSBS NEON site during the 2022 field season
 </p>
+
+-   Which model(s) did best?
+-   What might explain the differences in scores between the different
+    models?
 
 # 5 What’s next?
 
@@ -834,3 +838,11 @@ the OSBS NEON site during the 2022 field season
     Different forecast horizons?
 -   How could you apply what you have learned here in your research or
     teaching?
+
+# 6 Acknowledgements
+
+This tutorial is based in part off of tutorials created by Freya Olsson
+for the [NEON Forecast Challenge
+Workshop](https://github.com/OlssonF/NEON-forecast-challenge-workshop/tree/main)
+and examples created by Carl Boettiger for the [Beetle Communities theme
+documentation](https://github.com/cboettig/neon-beetles-forecasts/tree/main).
