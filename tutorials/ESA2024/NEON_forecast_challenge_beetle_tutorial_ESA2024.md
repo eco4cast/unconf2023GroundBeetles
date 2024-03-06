@@ -60,16 +60,13 @@ library(neon4cast)
 ## 3.1 Purpose
 
 This document provides a tutorial on how to prepare and submit forecasts
-to the [NEON Ecological Forecasting
-Challenge](https://projects.ecoforecast.org/neon4cast-ci/) [Beetle
+for the [Beetle
 Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html)
-theme.
-
-## 3.2 Introduction to NEON forecast challenge
-
-The Challenge has been organized by the Ecological Forecasting
-Initiative Research Coordination Network ([EFI
-RCN](https://ecoforecast.org/)).
+theme of the [NEON Ecological Forecasting
+Challenge](https://projects.ecoforecast.org/neon4cast-ci/). \##
+Introduction to NEON forecast challenge The Challenge has been organized
+by the Ecological Forecasting Initiative Research Coordination Network
+([EFI RCN](https://ecoforecast.org/)).
 
 The Challenge asks the scientific community to produce ecological
 forecasts of future observations of ecological data that will be
@@ -89,7 +86,7 @@ anywhere around the world that wants to submit forecasts. Learn more
 about how you can participate
 [here.](https://projects.ecoforecast.org/neon4cast-ci/instructions.html).
 
-## 3.3 Goals for forecasts of ecological communities
+## 3.2 Goals for forecasts of ecological communities
 
 Ecologists are interested in tracking changes in the **number of
 individual organisms over time** (count data of abundance). Numbers of
@@ -126,7 +123,7 @@ change over time we can use the driving variables to predict, or
 forecast, the values for the abundance and species richness variables
 for the ecological communities into the future.
 
-## 3.4 Overview of the Beetle Communities theme
+## 3.3 Overview of the Beetle Communities theme
 
 **What**: Forecast abundance and/or richness of ground beetles
 (carabids) collected in pitfall traps, standardized to sampling effort
@@ -137,11 +134,12 @@ forecasting can be found
 that we are not downloading the target dataset from the NEON data
 portal. Rather, we will download a version of the dataset that has been
 simplified and preformatted for this challenge by the EFI RCN.
-Specifically, the targets are:  
-\* *abundance*: Total number of carabid individuals per trap-night,
-estimated each week of the year at each NEON site \* *richness*: Total
-number of unique ‘species’ in a sampling bout for each NEON site each
-week.
+Specifically, the targets are:
+
+-   *abundance*: Total number of carabid individuals per trap-night,
+    estimated each week of the year at each NEON site
+-   *richness*: Total number of unique ‘species’ in a sampling bout for
+    each NEON site each week.
 
 **Where**: All 47 terrestrial [NEON
 sites](https://www.neonscience.org/field-sites/explore-field-sites).
@@ -165,7 +163,7 @@ latency for data publication can be nearly a year. In this tutorial we
 will train our models on data from 2013-2021 and we will make forecasts
 for the 2022 season so that we can score them immediately.
 
-## 3.5 Target user groups for this tutorial
+## 3.4 Target user groups for this tutorial
 
 This tutorial is intended to be used by forecasters at any stage of
 expertise and may be used as a learning tool as an introduction to
