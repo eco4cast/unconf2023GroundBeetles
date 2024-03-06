@@ -1,6 +1,6 @@
 ---
-title: "ESA 2024 Workshop: NEON forecast challenge - Ground Beetles"
-author: "EFI RCN 2023 Ground Beetle Group"
+title: "ESA 2024 Workshop: NEON Ecological Forecast Challenge - Ground Beetles"
+author: "Eric R. Sokol and the EFI RCN 2023 Ground Beetle Group"
 output:
   md_document: 
     variant: markdown_github
@@ -12,16 +12,27 @@ date: "`r Sys.Date()`"
 knitr::opts_chunk$set(eval=TRUE, error=FALSE, warning=FALSE, message=FALSE)
 ```
 
+# About this tutorial
 
-# Learning objectives  
+## Learning objectives  
 
- * Overview of the [Beetle Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html) theme for the [NEON Ecological Forecasting Challenge](https://projects.ecoforecast.org/neon4cast-ci/)
+ * Overview of the [Beetle Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html) theme for the [NEON Ecological Forecast Challenge](https://projects.ecoforecast.org/neon4cast-ci/)
  * How to create a simple forecast for the Beetle Communities theme.
  * How to submit/score a forecast to evaluate its accuracy.
  * How to use the NEON Forecast Challenge resources in your research and teaching.
  
+## Target user groups for this tutorial
+This tutorial is intended to be used by ecological forecasters at any stage of expertise and may be used as a learning tool as an introduction to forecasting properties of ecological populations or communities. Below, we provide code for introductory examples to walk through the entire process of creating and submitting a forecast to the NEON Ecological Forecasting challenge. This includes: 
 
-# Things you will need to complete this tutorial
+ 1. Accessing target datasets of NEON ground beetle richness and abundance
+ 2. Accessing climate forecast data to use as drivers in models predicting beetle data 
+ 3. How to use the `fable` package for R to specify and fit models
+ 4. How to submit a forecast to the forecast challenge 
+ 
+Upon completing this tutorial, participants should be able to create and submit forecasts to the Beetle Communities theme of the EFI RCN NEON Ecological Forecasting challenge.  
+
+## Things you will need to complete this tutorial
+
 You will need a current version of R (v4.2 or newer) to complete this tutorial. We also recommend the RStudio IDE to work with R. 
 
 To complete the workshop via this markdown document the following packages will need to be installed:
@@ -58,77 +69,91 @@ library(fabletools)
 library(neon4cast)
 ```
 
+
 # Introduction
-## Purpose
-This document provides a tutorial on how to prepare and submit forecasts for the [Beetle Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html) theme of the [NEON Ecological Forecasting Challenge](https://projects.ecoforecast.org/neon4cast-ci/). 
-## Introduction to NEON forecast challenge
+
+## [The NEON Ecological Forecast Challenge](https://projects.ecoforecast.org/neon4cast-ci/)
+
 The Challenge has been organized by the Ecological Forecasting Initiative Research Coordination Network ([EFI RCN](https://ecoforecast.org/)). 
 
-The Challenge asks the scientific community to produce ecological forecasts of future observations of ecological data that will be collected and published by the [National Ecological Observatory Network (NEON)](https://www.neonscience.org/). The Challenge is split into five themes that span aquatic and terrestrial systems, and population, community, and ecosystem processes across a broad range of ecoregions. We are excited to use this Challenge to learn more about the predictability of ecological processes by forecasting NEON data before it is collected.  
+The Challenge asks the scientific community to produce ecological forecasts of future observations of ecological data that will be collected and published by the [National Ecological Observatory Network (NEON)](https://www.neonscience.org/). The Challenge is split into [five themes](https://projects.ecoforecast.org/neon4cast-ci/targets.html#sec-starting-sites) that span aquatic and terrestrial systems, and population, community, and ecosystem processes across a broad range of ecoregions. We are excited to use this Challenge to learn more about the predictability of ecological processes by forecasting NEON data before it is collected.  
   
 Which modeling frameworks, mechanistic processes, and statistical approaches best capture community, population, and ecosystem dynamics? These questions are answerable by a community generating a diverse array of forecasts. The Challenge is open to any individual or team from anywhere around the world that wants to submit forecasts. Learn more about how you can participate [here.](https://projects.ecoforecast.org/neon4cast-ci/instructions.html). 
 
 ## Goals for forecasts of ecological communities
+
 Ecologists are interested in tracking changes in the **number of individual organisms over time** (count data of abundance). Numbers of each species will change due to births, deaths, and movement in (immigration) or out (emigration) of populations. The abundance of an ecological community is the sum of the number of individuals of each species. For example, in a hypothetical community of beetles sampled in Year 1 (time=1) , Species A has 10 individuals, Species B has 40 individuals and Species C has 50 individuals, giving a community abundance of 100. In subsequent years the abundance may increase, decrease or remain constant. A forecast may use this sequence of observations over time to predict how many individuals will occur in the next year (time=2), or a number of years into the future (time n). How far into the future we predict is known as the forecast horizon. The accuracy of the prediction is then compared to new observations and a new prediction is made.
 
 Ecologists are also interested in tracking changes in the **number of species over time** (Species richness over time without species identity) and in species turnover over time steps where the identity of the species is known. In the example above there are three species (A,B,C) but over time this can change if for example Species C  was to decline from 10 to zero individuals then the species richness would be 2, or increase if two previously unobserved species (D & E) arrive into the community, the species richness would be 4. Note that the loss of species A and the arrival of D and E gives a net species richness of 4, but without keeping track of the identity of the species we may be unaware of how community composition is changing over time.
 
 Ecological communities change for many reasons and so it is important to understand the drivers of changes in abundance or species richness by adding environmental variables into the models. By knowing how species change over time we can use the driving variables to predict, or forecast, the values for the abundance and species richness variables for the ecological communities into the future.
 
-## Overview of the Beetle Communities theme  
+## Overview of the [Beetle Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html) theme
+
 **What**: Forecast abundance and/or richness of ground beetles (carabids) collected in pitfall traps, standardized to sampling effort (trap night). More information about the NEON data product (DP1.10022.001, Ground beetles sampled from pitfall traps) we are forecasting can be found [here](https://data.neonscience.org/data-products/DP1.10022.001). Note that we are not downloading the target dataset from the NEON data portal. Rather, we will download a version of the dataset that has been simplified and preformatted for this challenge by the EFI RCN. Specifically, the targets are:  
 
- * *abundance*: Total number of carabid individuals per trap-night, estimated each week of the year at each NEON site
- * *richness*: Total number of unique ‘species’ in a sampling bout for each NEON site each week.
+ * `abundance`: Total number of carabid individuals per trap-night, estimated each week of the year at each NEON site
+ * `richness`: Total number of unique ‘species’ in a sampling bout for each NEON site each week.
 
 **Where**: All 47 terrestrial [NEON sites](https://www.neonscience.org/field-sites/explore-field-sites). 
 
-You can load a site list into R using the code below:
+You can download metadata for all NEON sites as follows:
+```{r get all neon site metadata, eval=F}
+# To download the NEON site information table:
+neon_site_info <- read_csv("https://www.neonscience.org/sites/default/files/NEON_Field_Site_Metadata_20231026.csv")
+```
+This table has information about the field sites, including location, ecoregion, and other useful metadata (e.g. elevation, mean annual precipitation, temperature, and NLCD class). 
+
+Or, you can load a more targeted list of just the sites included in the Beetle Communities theme:
 ```{r get neon sites, eval=F}
 site_data <- read_csv("https://raw.githubusercontent.com/eco4cast/neon4cast-targets/main/NEON_Field_Site_Metadata_20220412.csv") %>%
   dplyr::filter(beetles == 1)
 ```
 
-For this tutorial, we are going to focus on the [NEON site at Ordway-Swisher Biological Station (OSBS)](https://www.neonscience.org/field-sites/osbs) located in Domain 03 (D03) in Florida. 
+For this tutorial, we are going to focus on the [NEON site at Ordway-Swisher Biological Station (OSBS)](https://www.neonscience.org/field-sites/osbs), which is located in Domain 03 (D03) in Florida. 
 
-**When**: Target data are available as early as 2013 at some sites, and data are available at all sites from 2019 on. Because pitfall trap samples need to be sorted and individuals counted and identified, the latency for data publication can be nearly a year. In this tutorial we will train our models on data from 2013-2021 and we will make forecasts for the 2022 season so that we can score them immediately.  
+**When**: Target data are available as early as 2013 at some sites, and data are available at all sites from 2019 on. Because pitfall trap samples need to be sorted and individuals counted and identified, the latency for data publication can be nearly a year. In this tutorial we will train our models on data from 2013-2021 and we will make forecasts for the 2022 season so that we can score them immediately. 
 
-## Target user groups for this tutorial
-This tutorial is intended to be used by forecasters at any stage of expertise and may be used as a learning tool as an introduction to forecasting properties of ecological populations or communities. Below, we provide code for introductory examples to walk through the entire process of creating and submitting a forecast to the NEON Ecological Forecasting challenge. This includes: 
+Check current ground beetle data availability on the [NEON Data Portal](https://data.neonscience.org/data-products/DP1.10022.001#:~:text=last_page-,Availability%20and%20Download,-July%202013%20%E2%80%93%20January).
 
- 1. Accessing target datasets of NEON ground beetle richness and abundance
- 2. Accessing climate forecast data to use as drivers in models predicting beetle data 
- 3. How to use the `fable` package for R to specify and fit models
- 4. How to submit a forecast to the forecast challenge 
- 
-Upon completing this tutorial, participants should be able to create and submit forecasts to the Ground Beetle theme of the EFI RCN NEON forecasting challenge.  
+Determining a reference date (the first day of the forecast) and a forecast horizon (the time window that is being forecast) are two major challenges when forecasting population and community data. Other themes in the NEON Ecological Forecast Challenge focus on targets that are derived from instrument data, e.g., dissolved Oxygen or temperature in lakes, that are collected at a high frequency (e.g., > 1 Hz) and available in near-real-time (e.g., latency < 1 day). In practice, forecasts for these types of data have horizons that are typically a week to a month because they use output from weather forecasts (e.g., NOAA GEFS forecasts) as drivers in their models. These forecasts can be evaluated and updated as new data roll in, and new weather forecasts are published. This approach is known as "iterative near-term ecological forecasting" (Dietze et al. 2018). 
 
-# The forecasting workflow
+In contrast, population and community data are often available at a much lower frequency (e.g., bi-weekly or annual sampling bouts) with a much higher latency (e.g., 6 months to a year) because of the effort that is required to collect and process samples and publish the data. Thus, the goals and applications will likely be different for forecasts of these types of data. There is still an opportunity to iterate, and update forecasts, but over a much longer time period. 
+
+QUESTION: What are some use-cases for forecasts of ecological populations and communities that you are interested in pursuing?   
+
+
+# Forecasting NEON beetle communities
 
 ## Define spatial and temporal parameters for our forecast
 
-Here we set some values for variables in our code to identify the NEON site and the forecast start and end dates. This will allow us to easily adapt this code to future runs for at different sites. Note that iformation on the NEON sites can be found on the [NEON webpage](https://www.neonscience.org/field-sites/explore-field-sites). It can be filtered to only include terrestrial sites. This table has information about the field sites, including location, ecoregion, information about the plots (e.g. elevation, mean annual precipitation and temperature, and NLCD class). 
+Here we set some values for variables in our code to identify the NEON site we will be working with and the forecast start and end dates. This will allow us to easily adapt this code for future runs at different sites and forecasting different time windows.  
 
-```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
+Choose a NEON site:
+```{r set site}
 # choose site
 my_site = "OSBS"
+```
 
-# To download the NEON site infromation table:
-# neon_site_info <- read_csv("https://www.neonscience.org/sites/default/files/NEON_Field_Site_Metadata_20231026.csv")
-
+Choose forecast start and end dates:
+```{r site forecast dates}
 # date where we will start making predictions
-forecast_date <- "2022-01-01" #fit up through 2021, forecast 2022 data
+forecast_startdate <- "2022-01-01" #fit up through 2021, forecast 2022 data
 
 # date where we will stop making predictions
 forecast_enddate <- "2025-01-01"
-
 ```
+Note that the `forecast_startdate` will be renamed `reference_datetime` when we submit our forecast to the The Challenge. As the parameter name indicates, this date represents the beginning of the forecast. For this tutorial, we are using a `forecast_startdate`, or `reference_datetime`, that is in the past so that we can evaluate the accuracy of our forecasts at the end of this tutorial. 
+
+The `forecast_enddate` is used to determine the forecast horizon. In this example, we are setting a horizon to extend into the future. 
+
+If you want to create a true forecast to submit to the challenge, you will want to set your `forecast_startdate` as today's date. However, you will likely need to wait until next year before you can evaluate your forecast performance because you will need to wait for the data to be collected, processed, and published. 
 
 ## Read in the data
 
-We start forecasting by first looking at the historic data - called the 'targets'. These data are available with a latency of approximately 330 days. Here is how you read in the data from the targets file available from the EFI server. 
+We begin by first looking at the historic data - called the 'targets'. These data are available with a latency of approximately 330 days. Here is how you read in the data from the targets file available from the EFI server. 
 
-```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
+```{r read data}
 # beetle targets are here
 url <- "https://sdsc.osn.xsede.org/bio230014-bucket01/challenges/targets/project_id=neon4cast/duration=P1W/beetles-targets.csv.gz"
 
@@ -139,14 +164,15 @@ targets <- read_csv(url) %>%
                 datetime < "2022-12-31") # excluding provisional data 
 ```
 
-Let's take a look at the targets data!
-```{r eval = T, echo = F}
-targets[100:110,]
+## Visualise the target data
 
+Let's take a look at the targets data!
+```{r targets table}
+targets[100:110,]
 ```
 
-## Visualise the data
-```{r eval = T, echo = T, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: Beetle targets data at OSBS"}
+It is good practice to examine the dataset before proceeding with analysis:
+```{r plot targets, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: Beetle targets data at OSBS"}
 targets %>% 
   as_tsibble(index = datetime, key = variable) %>%
   autoplot() +
@@ -155,13 +181,15 @@ targets %>%
   theme(legend.position = "none")
 
 ```
+Note that target data are available through 2022. As of the writing of this document, some provisional 2023 data are available. The full 2023 NEON Ground Beetle dataset will be QCed during 2024 and published as a release with a DOI in January 2025. 
 
 ## Create the training dataset
-We will train our forecast models on target data from the beginning of the dataset until our `forecast_date`, which we set above. 
 
-```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
+We will train our forecast models on target data from the beginning of the dataset until our `forecast_startdate`, which we set above. 
+
+```{r get training data}
 targets_train <- targets %>%
-  filter(datetime < forecast_date) %>%
+  filter(datetime < forecast_startdate) %>%
   pivot_wider(names_from = variable, values_from = observation) %>%
   as_tsibble(index = datetime)
 ```
@@ -178,7 +206,7 @@ targets_train <- targets %>%
   - Temperature + Precipitation
 
 ### Forecast beetle abundance: null models
-```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
+```{r null forecasts}
 # specify and fit models
 # Using a log(x + 1) transform on the abundance data
 mod_fits <- targets_train %>% 
@@ -193,7 +221,7 @@ fc_null <- mod_fits %>%
 ```
 
 
-```{r eval = T, echo = F, warning=FALSE, fig.dim=c(10,10), fig.cap='Figure: Beetle abundance forecast at OSBS'}
+```{r plot null forecast, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: NULL forecasts of ground beetle abundance at OSBS"}
 # visualize the forecast
 fc_null %>% 
   autoplot(targets_train) +
@@ -209,7 +237,7 @@ So we do not overwhelm the open-meteo API, we have made the climate data used in
 
 Climate model we're using for this example is CMCC_CM2_VHR4
 
-```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
+```{r get climate data}
 
 # Get climate data
 path_to_clim_data <- "C:/Users/esokol/Box/00_MY_NEON/Forecasting_Beetles/future_climate_data/future_climate_2012-2050_OSBS_CMCC_CM2_VHR4.csv"
@@ -226,13 +254,15 @@ clim_long_ts <- clim_long %>%
 clim_wide <- clim_long %>%
   select(-unit) %>%
   pivot_wider(names_from = variable, values_from = prediction)
+```
 
+```{r plot climate data, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: modeled climate data at OSBS"}
 # visualize climate data
 clim_long_ts %>%
-  ggplot(aes(datetime, prediction, color = model_id)) + 
+  ggplot(aes(datetime, prediction)) + 
   geom_line() +
   facet_grid(variable ~ ., scales = "free_y") +
-  geom_vline(xintercept = lubridate::as_date(forecast_date),
+  geom_vline(xintercept = lubridate::as_date(forecast_startdate),
              lty = 2) + 
   theme_bw() +
   theme(legend.position = "none")
@@ -243,13 +273,13 @@ clim_long_ts %>%
 Pick output from one model from the climate ensemble:
 
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
-# subset into past and future datasets, based on forecast_date
+# subset into past and future datasets, based on forecast_startdate
 clim_past <- clim_wide %>%
-  filter(datetime < forecast_date,
+  filter(datetime < forecast_startdate,
          datetime > "2012-01-01")
 
 clim_future <- clim_wide %>%
-  filter(datetime >= forecast_date,
+  filter(datetime >= forecast_startdate,
          datetime <= forecast_enddate)
 
 ```
@@ -319,7 +349,7 @@ fc_climate_mods_efi <- fc_best_lm %>%
   neon4cast::efi_format() %>%
   mutate(
     project_id = "neon4cast",
-    reference_datetime = forecast_date,
+    reference_datetime = forecast_startdate,
     duration = "P1W")
 
 ```
