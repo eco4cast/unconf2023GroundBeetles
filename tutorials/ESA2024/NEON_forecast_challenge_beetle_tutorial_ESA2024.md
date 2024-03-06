@@ -634,12 +634,12 @@ head(fc_best_lm_efi)
     ## # A tibble: 6 × 10
     ##   datetime   site_id parameter model_id    family variable prediction project_id
     ##   <date>     <chr>   <chr>     <chr>       <chr>  <chr>         <dbl> <chr>     
-    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…    0.105   neon4cast 
-    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…   -0.0178  neon4cast 
-    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…    0.00537 neon4cast 
-    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…    0.00980 neon4cast 
-    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…    0.0789  neon4cast 
-    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…    0.0569  neon4cast 
+    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…     0.161  neon4cast 
+    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…     0.0146 neon4cast 
+    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…     0.0513 neon4cast 
+    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…     0.0423 neon4cast 
+    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…     0.153  neon4cast 
+    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…     0.0529 neon4cast 
     ## # ℹ 2 more variables: reference_datetime <chr>, duration <chr>
 
 ``` r
