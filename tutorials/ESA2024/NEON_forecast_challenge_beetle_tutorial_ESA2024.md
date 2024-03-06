@@ -235,13 +235,10 @@ targets %>%
   theme(legend.position = "none")
 ```
 
-<figure>
-<img
-src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/unnamed-chunk-4-1.png"
-alt="Figure: Beetle targets data at OSBS" />
-<figcaption aria-hidden="true">Figure: Beetle targets data at
-OSBS</figcaption>
-</figure>
+<img src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/unnamed-chunk-4-1.png" alt="Figure: Beetle targets data at OSBS"  />
+<p class="caption">
+Figure: Beetle targets data at OSBS
+</p>
 
 ## 4.4 Create the training dataset
 

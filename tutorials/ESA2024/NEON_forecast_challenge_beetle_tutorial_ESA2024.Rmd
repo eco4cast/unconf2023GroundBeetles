@@ -135,7 +135,7 @@ targets[100:110,]
 ```
 
 ## Visualise the data
-```{r eval = T, echo = T, fig.dim=c(8,6), fig.cap='Figure: Beetle targets data at OSBS'}
+```{r eval = T, echo = T, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: Beetle targets data at OSBS"}
 targets %>% 
   as_tsibble(index = datetime, key = variable) %>%
   autoplot() +
