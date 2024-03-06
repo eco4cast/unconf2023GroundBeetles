@@ -55,6 +55,7 @@ install.packages('fabletools') # helper functions for using fable
 install.packages('remotes')
 install.packages('tsibble') # package for dealing with time series data sets and tsibble objects
 remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
+remotes::install_github("eco4cast/score4cast") # package to score forecasts
 ```
 
 Then load the packages. 
@@ -67,6 +68,7 @@ library(tsibble)
 library(fable)
 library(fabletools)
 library(neon4cast)
+library(score4cast)
 ```
 
 
@@ -353,14 +355,34 @@ fc_best_lm %>%
 
 ## How to submit a forecast to the NEON Forecast Challenge
 
-Detailed guidelines on how to submit a forecast to the NEON Forecast Challenge can be found [here](https://projects.ecoforecast.org/neon4cast-ci/instructions.html). 
+Detailed guidelines on how to submit a forecast to the NEON Forecast Challenge can be found [here](https://projects.ecoforecast.org/neon4cast-ci/instructions.html). The [forecast file format](https://projects.ecoforecast.org/neon4cast-ci/instructions.html#forecast-file-format) requires the following columns:
 
-To submit our example forecast, we can take the output from the `fabletools::forecast()` function we used above and feed it into `neon4cast::efi_format()` to format the output for submissions to The Challenge. We also need to add a few additional columns (see [here](https://projects.ecoforecast.org/neon4cast-ci/instructions.html#forecast-file-format) for a description of the required columns). 
+ * `project_id`: use "neon4cast"
+
+ * `model_id`: the short name of the model defined as the model_id in your registration. The model_id should have no spaces. model_id should reflect a method to forecast one or a set of target variables and must be unique to the neon4cast challenge.
+
+ * `datetime`: forecast timestamp. Format `%Y-%m-%d %H:%M:%S` with UTC as the time zone. Forecasts submitted with a `%Y-%m-%d` format will be converted to a full datetime assuming UTC mid-night.
+
+ * `reference_datetime`: The start of the forecast; this should be 0 times steps in the future. There should only be one value of `reference_datetime` in the file. Format is `%Y-%m-%d %H:%M:%S` with UTC as the time zone. Forecasts submitted with a `%Y-%m-%d` format will be converted to a full datetime assuming UTC mid-night.
+
+ * `duration`: the time-step of the forecast. Use the value of `P1D` for a daily forecast, `P1W` for a weekly forecast, and `PT30M` for 30 minute forecast. This value should match the duration of the target variable that you are forecasting. Formatted as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations)
+
+ * `site_id`: code for NEON site.
+
+ * `family`: name of the probability distribution that is described by the parameter values in the parameter column (see list below for accepted distribution). An ensemble forecast as a family of ensemble. See note below about family
+
+ * `parameter`: the parameters for the distribution (see note below about the parameter column) or the number of the ensemble members. For example, the parameters for a normal distribution are called `mu` and `sigma`.
+
+ * `variable`: standardized variable name. It must match the variable name in the target file.
+
+ * `prediction`: forecasted value for the parameter in the parameter column
+
+To submit our example forecast, we can take the output from the `fabletools::forecast()` function we used above and feed it into `neon4cast::efi_format()` to format the output for submissions to The Challenge. We also need to add a few additional columns. 
 
 Make sure all the required columns are included in the forecast output. 
 ```{r format for efi submission}
 # update dataframe of model output for submission
-fc_climate_mods_efi <- fc_best_lm %>% 
+fc_best_lm_efi <- fc_best_lm %>% 
   mutate(site_id = my_site) %>% #efi needs a NEON site ID
   neon4cast::efi_format() %>%
   mutate(
@@ -372,12 +394,12 @@ fc_climate_mods_efi <- fc_best_lm %>%
 
 What does the content of the submission look like?
 ```{r submission table}
-head(fc_climate_mods_efi)
+head(fc_best_lm_efi)
 ```
 
 ```{r plot tslm submission, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: TSLM forecast submission file for OSBS, parameter indicates emsemble member"}
 # visualize the EFI-formatted submission
-fc_climate_mods_efi %>% 
+fc_best_lm_efi %>% 
   as_tsibble(index = datetime,
              key = c(model_id, parameter)) %>%
   ggplot(aes(datetime, prediction, color = parameter)) +
@@ -406,16 +428,79 @@ efi_model_id <- "bet_abund_example_tslm_temp"
 forecast_file <- paste0(theme_name,"-",file_date,"-",efi_model_id,".csv.gz")
 
 # write the file to your working directory
-write_csv(fc_climate_mods_efi, forecast_file)
+write_csv(fc_best_lm_efi, forecast_file)
 
 # submit the file
 neon4cast::submit(forecast_file = forecast_file)
 
 ```
 
-## How to score your forecast
 
+# Evaluating your forecast
 
+## How your submission will be scored
+The Challenge implements methods from the scoringRules R package to calculate the Continuous Rank Probability Score (CRPS) via the `score4cast` package, where a lower CRPS score indicates higher forecast accuracy. CRPS uses information about the variance of the forecasts as well as the estimated mean to calculate the score by comparing it with the observation. There is some balance between accuracy and precision. The forecasts will also be compared with 'null' models (RW and climatology). More information can be found in the [documentation](https://projects.ecoforecast.org/neon4cast-docs/Evaluation.html) or the `score4cast` package from EFI organizers [here](https://github.com/eco4cast/score4cast). 
 
+You can view past submissions to the Beetle Communities theme [here:](https://projects.ecoforecast.org/neon4cast-dashboard/beetles.html). 
 
+You can also download the raw scores from the bucket directly, for example:
+```{r get scores from efi, eval=F}
+# This example requires the `arrow` package
+# install.packages("arrow")
+library(arrow)
 
+# what is your model_id?
+# my_mod_id <- "bet_abund_example_tslm_temp"
+my_mod_id <- "bet_example_mod_naive"
+my_mod_id <- "bet_example_mod_null"
+
+# format the URL
+my_url <- paste0(
+  "s3://anonymous@bio230014-bucket01/challenges/scores/parquet/project_id=neon4cast/duration=P1W/variable=abundance/model_id=",
+  my_mod_id,
+  "?endpoint_override=sdsc.osn.xsede.org")
+
+# bind dataset
+ds_mod_results <- arrow::open_dataset(my_url)
+
+# get recs for dates that are scored
+my_scores <- ds_mod_results %>%
+  filter(!is.na(crps)) %>% 
+  collect()
+
+head(my_scores)
+```
+
+## How to score your own forecast
+
+For immediate feedback, we can use the targets data from 2022 to score our forecast for the 2022 field season at OSBS. 
+```{r score forecast}
+# filter to 2022 because that is the latest release year
+# 2023 is provisional and most sites do not yet have data reported
+targets_2022 <- targets %>% 
+  dplyr::filter(
+    datetime >= "2022-01-01", 
+    datetime < "2023-01-01",
+    variable == "abundance",
+    observation > 0)
+
+# list of target site dates for filtering mod predictions
+target_site_dates_2022 <- targets_2022 %>%
+  select(site_id, datetime) %>% distinct()
+
+# filter model forecast data to dates where we have observations
+mod_results_to_score <- fc_best_lm_efi %>%
+  left_join(target_site_dates_2022,.) %>%
+  dplyr::filter(!is.na(parameter))
+
+# score the forecasts
+mod_scores <- score(
+  forecast = mod_results_to_score,
+  target = targets_2022) 
+
+head(mod_scores)
+```
+
+```{r visualize scores}
+# compare scores from best_lm, mod_mean, and mod_naive
+```
