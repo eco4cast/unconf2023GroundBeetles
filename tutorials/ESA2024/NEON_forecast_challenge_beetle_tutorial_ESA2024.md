@@ -634,12 +634,12 @@ head(fc_best_lm_efi)
     ## # A tibble: 6 × 10
     ##   datetime   site_id parameter model_id    family variable prediction project_id
     ##   <date>     <chr>   <chr>     <chr>       <chr>  <chr>         <dbl> <chr>     
-    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…    -0.0248 neon4cast 
-    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…    -0.0479 neon4cast 
-    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…     0.111  neon4cast 
-    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…    -0.0208 neon4cast 
-    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…     0.0170 neon4cast 
-    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…     0.111  neon4cast 
+    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…     0.0483 neon4cast 
+    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…     0.0868 neon4cast 
+    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…    -0.0423 neon4cast 
+    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…    -0.0192 neon4cast 
+    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…     0.0500 neon4cast 
+    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…     0.134  neon4cast 
     ## # ℹ 2 more variables: reference_datetime <chr>, duration <chr>
 
 ``` r
@@ -715,8 +715,8 @@ library(arrow)
 
 # what is your model_id?
 # my_mod_id <- "bet_abund_example_tslm_temp"
+# my_mod_id <- "bet_example_mod_null"
 my_mod_id <- "bet_example_mod_naive"
-my_mod_id <- "bet_example_mod_null"
 
 # format the URL
 my_url <- paste0(
@@ -780,6 +780,57 @@ head(mod_scores)
     ## #   sd <dbl>, quantile97.5 <dbl>, quantile02.5 <dbl>, quantile90 <dbl>,
     ## #   quantile10 <dbl>, horizon <drtn>
 
+Are these scores better than our null models? Here, we will score the
+`mod_mean` and `mod_naive`, and combine the null model scores with the
+scores for our `best_lm` forecast above. Then we can compare.
+
 ``` r
-# compare scores from best_lm, mod_mean, and mod_naive
+# get scores for the mean and naive models
+# the fc_null object has scores from both models
+# note: we need to add site_id back in for efi_format() to work
+fc_null_efi <- fc_null %>% 
+  mutate(site_id = my_site) %>% #efi needs a NEON site ID
+  neon4cast::efi_format() 
+
+# filter to dates where we have target data from 2022
+mod_results_to_score <- fc_null_efi %>%
+  left_join(target_site_dates_2022,.) %>%
+  dplyr::filter(!is.na(parameter))
+
+# socre the forecasts for those dates
+mod_null_scores <- score(
+  forecast = mod_results_to_score,
+  target = targets_2022) 
+
+# stack the scores for our best_lm and the null models
+# forcing reference_datetime to be the same type in both tables
+# so they will stack
+all_mod_scores <- bind_rows(
+  mod_null_scores %>% mutate(
+    reference_datetime = as.character(reference_datetime)), 
+  mod_scores %>% mutate(
+    reference_datetime = as.character(reference_datetime)))
 ```
+
+``` r
+all_mod_scores %>%
+  ggplot(aes(datetime, crps, color = model_id)) +
+  geom_line() +
+  theme_bw() +
+  ggtitle("CRPS scores for models predicting beetle abundance at OSBS during 2022")
+```
+
+<img src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/plot forecast scores-1.png" alt="Figure: Forecast scores (CRPS) for models predicting beetle abundance at the OSBS NEON site during the 2022 field season"  />
+<p class="caption">
+Figure: Forecast scores (CRPS) for models predicting beetle abundance at
+the OSBS NEON site during the 2022 field season
+</p>
+
+# 5 What’s next?
+
+-   The forecasts we created here were relatively simple. What are ideas
+    you have to improve the forecasts?
+-   How could you expand on this forecasting exercise? More sites?
+    Different forecast horizons?
+-   How could you apply what you have learned here in your research or
+    teaching?

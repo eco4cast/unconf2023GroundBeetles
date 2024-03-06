@@ -451,8 +451,8 @@ library(arrow)
 
 # what is your model_id?
 # my_mod_id <- "bet_abund_example_tslm_temp"
+# my_mod_id <- "bet_example_mod_null"
 my_mod_id <- "bet_example_mod_naive"
-my_mod_id <- "bet_example_mod_null"
 
 # format the URL
 my_url <- paste0(
@@ -501,6 +501,46 @@ mod_scores <- score(
 head(mod_scores)
 ```
 
-```{r visualize scores}
-# compare scores from best_lm, mod_mean, and mod_naive
+Are these scores better than our null models? Here, we will score the `mod_mean` and `mod_naive`, and combine the null model scores with the scores for our `best_lm` forecast above. Then we can compare. 
+```{r getting null model scores}
+# get scores for the mean and naive models
+# the fc_null object has scores from both models
+# note: we need to add site_id back in for efi_format() to work
+fc_null_efi <- fc_null %>% 
+  mutate(site_id = my_site) %>% #efi needs a NEON site ID
+  neon4cast::efi_format() 
+
+# filter to dates where we have target data from 2022
+mod_results_to_score <- fc_null_efi %>%
+  left_join(target_site_dates_2022,.) %>%
+  dplyr::filter(!is.na(parameter))
+
+# socre the forecasts for those dates
+mod_null_scores <- score(
+  forecast = mod_results_to_score,
+  target = targets_2022) 
+
+# stack the scores for our best_lm and the null models
+# forcing reference_datetime to be the same type in both tables
+# so they will stack
+all_mod_scores <- bind_rows(
+  mod_null_scores %>% mutate(
+    reference_datetime = as.character(reference_datetime)), 
+  mod_scores %>% mutate(
+    reference_datetime = as.character(reference_datetime)))
 ```
+
+```{r plot forecast scores, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: Forecast scores (CRPS) for models predicting beetle abundance at the OSBS NEON site during the 2022 field season"}
+all_mod_scores %>%
+  ggplot(aes(datetime, crps, color = model_id)) +
+  geom_line() +
+  theme_bw() +
+  ggtitle("CRPS scores for models predicting beetle abundance at OSBS during 2022")
+```
+
+
+# What's next?
+
+ * The forecasts we created here were relatively simple. What are ideas you have to improve the forecasts? 
+ * How could you expand on this forecasting exercise? More sites? Different forecast horizons?
+ * How could you apply what you have learned here in your research or teaching?
