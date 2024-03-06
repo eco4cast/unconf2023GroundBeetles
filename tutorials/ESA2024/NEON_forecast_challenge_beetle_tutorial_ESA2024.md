@@ -554,6 +554,21 @@ Figure: TSLM forecast of beelte abundance at OSBS
 # an official entry to the challenge
 ```
 
+## 3.6 How to submit a forecast to the NEON Forecast Challenge
+
+Detailed guidelines on how to submit a forecast to the NEON Forecast
+Challenge can be found
+[here](https://projects.ecoforecast.org/neon4cast-ci/instructions.html).
+
+To submit our example forecast, we can take the output from the
+`fabletools::forecast()` function we used above and feed it into
+`neon4cast::efi_format()` to format the output for submissions to The
+Challenge. We also need to add a few additional columns (see
+[here](https://projects.ecoforecast.org/neon4cast-ci/instructions.html#forecast-file-format)
+for a description of the required columns).
+
+Make sure all the required columns are included in the forecast output.
+
 ``` r
 # update dataframe of model output for submission
 fc_climate_mods_efi <- fc_best_lm %>% 
@@ -561,6 +576,70 @@ fc_climate_mods_efi <- fc_best_lm %>%
   neon4cast::efi_format() %>%
   mutate(
     project_id = "neon4cast",
+    model_id = "bet_abund_example_tslm_temp",
     reference_datetime = forecast_startdate,
     duration = "P1W")
 ```
+
+What does the content of the submission look like?
+
+``` r
+head(fc_climate_mods_efi)
+```
+
+    ## # A tibble: 6 × 10
+    ##   datetime   site_id parameter model_id    family variable prediction project_id
+    ##   <date>     <chr>   <chr>     <chr>       <chr>  <chr>         <dbl> <chr>     
+    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…    -0.0524 neon4cast 
+    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…     0.140  neon4cast 
+    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…     0.0597 neon4cast 
+    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…     0.146  neon4cast 
+    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…     0.134  neon4cast 
+    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…     0.0474 neon4cast 
+    ## # ℹ 2 more variables: reference_datetime <chr>, duration <chr>
+
+``` r
+# visualize the EFI-formatted submission
+fc_climate_mods_efi %>% 
+  as_tsibble(index = datetime,
+             key = c(model_id, parameter)) %>%
+  ggplot(aes(datetime, prediction, color = parameter)) +
+  geom_line() +
+  facet_grid(model_id ~ .) +
+  theme_bw()
+```
+
+<img src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/plot tslm submission-1.png" alt="Figure: TSLM forecast submission file for OSBS, parameter indicates emsemble member"  />
+<p class="caption">
+Figure: TSLM forecast submission file for OSBS, parameter indicates
+emsemble member
+</p>
+
+Here is how to actually submit the file to The Challenge:
+
+``` r
+# file name format is: theme_name-year-month-day-model_id.csv
+
+# set the theme name
+theme_name <- "beetles"
+
+# set your submission date
+file_date <- Sys.Date()
+
+# make sure the model_id in the filename matches the model_id in the data
+# NOTE: having the text string "example" in the file name will prevent this 
+# submission from being displayed on the challenge dashboard or being included
+# in statistics about challenge participation. 
+efi_model_id <- "bet_abund_example_tslm_temp"
+
+# format the file name
+forecast_file <- paste0(theme_name,"-",file_date,"-",efi_model_id,".csv.gz")
+
+# write the file to your working directory
+write_csv(fc_climate_mods_efi, forecast_file)
+
+# submit the file
+neon4cast::submit(forecast_file = forecast_file)
+```
+
+## 3.7 How to score your forecast
