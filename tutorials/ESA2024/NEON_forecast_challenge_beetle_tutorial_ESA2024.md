@@ -337,7 +337,7 @@ targets_train <- targets %>%
   as_tsibble(index = datetime)
 ```
 
-## 3.5 Getting started: some simple models
+## 3.5 Example forecasts: some simple models
 
 -   Null models
     -   `fable::MEAN()`: Historical mean and standard deviation
@@ -358,8 +358,8 @@ targets_train <- targets %>%
 mod_fits <- targets_train %>% 
   tsibble::fill_gaps() %>%
   fabletools::model(
-    bet_example_mod_null = fable::MEAN(log1p(abundance)),
-    bet_example_mod_naive = fable::NAIVE(log1p(abundance))) # random walk model, requires gapfill
+    mod_mean = fable::MEAN(log1p(abundance)),
+    mod_naive = fable::NAIVE(log1p(abundance))) # random walk model, requires gapfill
 
 # make a forecast
 fc_null <- mod_fits %>%
@@ -455,9 +455,9 @@ examine model fit statistics.
 # specify and fit model
 mod_fit_candidates <- targets_clim_train %>%
   fabletools::model(
-    bet_example_tslm_temp = fable::TSLM(log1p(abundance) ~ temperature_2m_mean),
-    bet_example_tslm_precip = fable::TSLM(log1p(abundance) ~ precipitation_sum),
-    bet_example_tslm_temp_precip = fable::TSLM(log1p(abundance) ~ temperature_2m_mean + precipitation_sum))
+    mod_temp = fable::TSLM(log1p(abundance) ~ temperature_2m_mean),
+    mod_precip = fable::TSLM(log1p(abundance) ~ precipitation_sum),
+    mod_temp_precip = fable::TSLM(log1p(abundance) ~ temperature_2m_mean + precipitation_sum))
 
 # look at fit stats
 fabletools::report(mod_fit_candidates)
@@ -466,9 +466,9 @@ fabletools::report(mod_fit_candidates)
     ## # A tibble: 3 × 15
     ##   .model   r_squared adj_r_squared  sigma2 statistic p_value    df log_lik   AIC
     ##   <chr>        <dbl>         <dbl>   <dbl>     <dbl>   <dbl> <int>   <dbl> <dbl>
-    ## 1 bet_exa…  0.0332         0.0245  0.00416    3.78    0.0544     2    149. -610.
-    ## 2 bet_exa…  0.000797      -0.00829 0.00430    0.0877  0.768      2    147. -606.
-    ## 3 bet_exa…  0.0333         0.0156  0.00420    1.88    0.158      3    149. -608.
+    ## 1 mod_temp  0.0332         0.0245  0.00416    3.78    0.0544     2    149. -610.
+    ## 2 mod_pre…  0.000797      -0.00829 0.00430    0.0877  0.768      2    147. -606.
+    ## 3 mod_tem…  0.0333         0.0156  0.00420    1.88    0.158      3    149. -608.
     ## # ℹ 6 more variables: AICc <dbl>, BIC <dbl>, CV <dbl>, deviance <dbl>,
     ## #   df.residual <int>, rank <int>
 
@@ -479,11 +479,17 @@ Plot the predicted versus observed abundance data:
 # augment reformats model output into a tsibble for easier plotting
 fabletools::augment(mod_fit_candidates) %>%
   ggplot(aes(x = datetime)) +
-  geom_line(aes(y = abundance, color = "Obs")) +
-  geom_line(aes(y = .fitted, color = .model))
+  geom_line(aes(y = abundance, lty = "Obs"), color = "dark gray") +
+  geom_line(aes(y = .fitted, color = .model, lty = "Model")) +
+  facet_grid(.model ~ .) +
+  theme_bw()
 ```
 
-![](NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/unnamed-chunk-4-1.png)
+<img src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/plot tslm modeled vs observed-1.png" alt="Figure: TSLM predictions of beetle abundances at OSBS compared against observed data"  />
+<p class="caption">
+Figure: TSLM predictions of beetle abundances at OSBS compared against
+observed data
+</p>
 
 We could use all of these models to make an ensemble forecast, but for
 simplicity, we will just take the best model (lowest AICc), and use that
@@ -491,7 +497,7 @@ to create a forecast:
 
 ``` r
 # focus on temperature model for now
-mod_best_lm <- mod_fit_candidates %>% select(bet_example_tslm_temp)
+mod_best_lm <- mod_fit_candidates %>% select(mod_temp)
 report(mod_best_lm)
 ```
 
@@ -522,14 +528,22 @@ fc_best_lm <- mod_best_lm %>%
     new_data = 
       clim_future %>%
       as_tsibble(index = datetime)) 
+```
 
+Visualize the forecast.
+
+``` r
 # visualize the forecast
 fc_best_lm %>% 
   autoplot(targets_train) +
-  facet_grid(.model ~ .)
+  facet_grid(.model ~ .) + 
+  theme_bw()
 ```
 
-![](NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/unnamed-chunk-5-1.png)
+<img src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/plot tslm forecast-1.png" alt="Figure: TSLM forecast of beelte abundance at OSBS"  />
+<p class="caption">
+Figure: TSLM forecast of beelte abundance at OSBS
+</p>
 
 ``` r
 # format for submission to EFI
@@ -538,8 +552,9 @@ fc_best_lm %>%
 # https://projects.ecoforecast.org/neon4cast-ci/instructions.html
 # I'm putting "example" in the name so the model does not register as 
 # an official entry to the challenge
+```
 
-
+``` r
 # update dataframe of model output for submission
 fc_climate_mods_efi <- fc_best_lm %>% 
   mutate(site_id = my_site) %>% #efi needs a NEON site ID
