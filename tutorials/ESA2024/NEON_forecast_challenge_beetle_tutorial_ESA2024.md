@@ -226,6 +226,15 @@ Let’s take a look at the targets data!
 
 ## 4.3 Visualise the data
 
+``` r
+targets %>% 
+  as_tsibble(index = datetime, key = variable) %>%
+  autoplot() +
+  facet_grid(variable ~ ., scales = "free_y") + 
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
 <figure>
 <img
 src="NEON_forecast_challenge_beetle_tutorial_ESA2024_files/figure-markdown_github/unnamed-chunk-4-1.png"
