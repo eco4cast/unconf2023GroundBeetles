@@ -9,7 +9,7 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(eval=TRUE, error=FALSE, warning=FALSE, message=FALSE)
 ```
 
 
@@ -186,7 +186,8 @@ fc_null <- mod_fits %>%
 # visualize the forecast
 fc_null %>% 
   autoplot(targets_train) +
-  facet_grid(.model ~ ., scales = "free_y")
+  facet_grid(.model ~ ., scales = "free_y") +
+  theme_bw()
 ```
 
 ### Forecast beetle abundance: regression models
@@ -195,27 +196,15 @@ Regression on climate model outputs allows us to make predictions about future f
 
 So we do not overwhelm the open-meteo API, we have made the climate data used in this tutorial available at: TBD CyVerse address
 
+Climate model we're using for this example is CMCC_CM2_VHR4
 
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
 
-# Get climate data ----
-path_to_clim_data <- "C:/Users/esokol/Box/00_MY_NEON/Forecasting_Beetles/future_climate_data/"
+# Get climate data
+path_to_clim_data <- "C:/Users/esokol/Box/00_MY_NEON/Forecasting_Beetles/future_climate_data/future_climate_2012-2050_OSBS_CMCC_CM2_VHR4.csv"
 
-# list files
-clim_file_list <- list.files(path_to_clim_data)
-
-# filter to files for target site
-clim_files_to_stack <- clim_file_list[grepl(my_site, clim_file_list)]
-
-# loop through to stack the files
-clim_long <- data.frame()
-for(i_file in clim_files_to_stack){
-  clim_long <- 
-    bind_rows(
-      clim_long,
-      read_csv(paste0(path_to_clim_data,i_file)) %>%
-        filter(datetime <= forecast_enddate))
-}
+clim_long <- read_csv(path_to_clim_data)  %>%
+        filter(datetime <= forecast_enddate)
 
 # make a tsibble object
 clim_long_ts <- clim_long %>%
@@ -233,7 +222,9 @@ clim_long_ts %>%
   geom_line() +
   facet_grid(variable ~ ., scales = "free_y") +
   geom_vline(xintercept = lubridate::as_date(forecast_date),
-             lty = 2)
+             lty = 2) + 
+  theme_bw() +
+  theme(legend.position = "none")
 
 ```
 
@@ -241,18 +232,13 @@ clim_long_ts %>%
 Pick output from one model from the climate ensemble:
 
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
-# We will only use output from one climate model for now
-clim_model_id <- "CMCC_CM2_VHR4"
-
 # subset into past and future datasets, based on forecast_date
 clim_past <- clim_wide %>%
-  filter(model_id == clim_model_id,
-         datetime < forecast_date,
+  filter(datetime < forecast_date,
          datetime > "2012-01-01")
 
 clim_future <- clim_wide %>%
-  filter(model_id == clim_model_id,
-         datetime >= forecast_date,
+  filter(datetime >= forecast_date,
          datetime <= forecast_enddate)
 
 ```
@@ -270,12 +256,9 @@ Specify and fit simple linear regression models using `fable::TSLM()`, examine m
 # specify and fit model
 mod_fit_candidates <- targets_clim_train %>%
   fabletools::model(
-    mod_temp = fable::TSLM(log1p(abundance) ~ temperature_2m_mean),
-    mod_precip = fable::TSLM(log1p(abundance) ~ precipitation_sum),
-    mod_both = fable::TSLM(log1p(abundance) ~ temperature_2m_mean + precipitation_sum),
-    mod_temp_season = fable::TSLM(log1p(abundance) ~ temperature_2m_mean + season(period = "1 year")),
-    mod_precip_season = fable::TSLM(log1p(abundance) ~ precipitation_sum + season(period = "1 year")),
-    mod_season = fable::TSLM(log1p(abundance) ~ season(period = "1 year")))
+    bet_example_tslm_temp = fable::TSLM(log1p(abundance) ~ temperature_2m_mean),
+    bet_example_tslm_precip = fable::TSLM(log1p(abundance) ~ precipitation_sum),
+    bet_example_tslm_temp_precip = fable::TSLM(log1p(abundance) ~ temperature_2m_mean + precipitation_sum))
 
 # look at fit stats
 fabletools::report(mod_fit_candidates)
@@ -295,7 +278,7 @@ fabletools::augment(mod_fit_candidates) %>%
 We could use all of these models to make an ensemble forecast, but for simplicity, we will just take the best model (lowest AICc), and use that to create a forecast:
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
 # focus on temperature model for now
-mod_best_lm <- mod_fit_candidates %>% select(mod_temp)
+mod_best_lm <- mod_fit_candidates %>% select(bet_example_tslm_temp)
 report(mod_best_lm)
 
 # make a forecast
@@ -304,7 +287,6 @@ fc_best_lm <- mod_best_lm %>%
   fabletools::forecast(
     new_data = 
       clim_future %>%
-      dplyr::filter(model_id == clim_model_id) %>%
       as_tsibble(index = datetime)) 
 
 # visualize the forecast
@@ -319,12 +301,9 @@ fc_best_lm %>%
 # I'm putting "example" in the name so the model does not register as 
 # an official entry to the challenge
 
-# update model name for submission
-efi_model_id <- paste0("bet_example_lm_temp2m_",clim_model_id)
 
 # update dataframe of model output for submission
 fc_climate_mods_efi <- fc_best_lm %>% 
-  mutate(.model = efi_model_id) %>%
   mutate(site_id = my_site) %>% #efi needs a NEON site ID
   neon4cast::efi_format() %>%
   mutate(
