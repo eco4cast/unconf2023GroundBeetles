@@ -6,10 +6,10 @@
     Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html)
     theme for the [NEON Ecological Forecast
     Challenge](https://projects.ecoforecast.org/neon4cast-ci/)
--   How to create a simple forecast for the Beetle Communities theme.
--   How to submit/score a forecast to evaluate its accuracy.
+-   How to create a simple forecast for the Beetle Communities theme
+-   How to submit/score a forecast to evaluate its accuracy
 -   How to use the NEON Forecast Challenge resources in your research
-    and teaching.
+    and teaching
 
 ## 1.2 Target user groups for this tutorial
 
@@ -188,11 +188,16 @@ Ordway-Swisher Biological Station
 in Domain 03 (D03) in Florida.
 
 **When**: Target data are available as early as 2013 at some sites, and
-data are available at all sites from 2019 on. Because pitfall trap
-samples need to be sorted and individuals counted and identified, the
-latency for data publication can be nearly a year. In this tutorial we
-will train our models on data from 2013-2021 and we will make forecasts
-for the 2022 season so that we can score them immediately.
+data are available at all sites from 2019 on. Pitfall trap deployments
+are typically two weeks in duration (i.e., a sampling bout lasts two
+weeks), and traps are collected and redeployed throughout the growing
+season at each NEON site. Note that the target data for The Challenge
+are standardized to represent beetle abundance per trap night. Because
+pitfall trap samples need to be sorted and individuals counted and
+identified, the latency for data publication can be nearly a year. In
+this tutorial we will train our models on data from 2013-2021 and we
+will make forecasts for the 2022 season so that we can score them
+immediately.
 
 Check current ground beetle data availability on the [NEON Data
 Portal](https://data.neonscience.org/data-products/DP1.10022.001#:~:text=last_page-,Availability%20and%20Download,-July%202013%20%E2%80%93%20January).
@@ -342,6 +347,23 @@ targets_train <- targets %>%
 
 ## 3.5 Example forecasts: some simple models
 
+In this tutorial, we will begin by producing two “null model” forecasts
+using functions available in the `fable` package for R. The `MEAN` null
+model will forecast abundance based on the historical mean and standard
+deviation in the training data. The `NAIVE` null model is a random walk
+model. We will then use the `TSLM` function to create simple linear
+regression models to predict beetle abundances using daily temperature
+(mean daily temperature at 2m height) and precipitation (daily
+cumulative precipitation) estimates produced from CMIP6 climate model
+runs from 1950-2050. While these data do not represent actual
+observations of temperature and precipitation at the NEON site, they
+have been fit to historical data, so past dates in the simulated data
+should capture general trends at the site and values for future dates
+should represent a realistic forecast of climate variables into the
+future.
+
+An overview of the models we will fit to the data in this tutorial:
+
 -   Null models
     -   `fable::MEAN()`: Historical mean and standard deviation
     -   `fable::NAIVE()`: Random walk
@@ -353,7 +375,19 @@ targets_train <- targets %>%
         runs
     -   Temperature + Precipitation
 
+At the end of this tutorial, we will compare the perfomance of our best
+regression model against the two null models.
+
 ### 3.5.1 Forecast beetle abundance: null models
+
+Here, we fit our two null models to the training data and then create
+forecasts for 2022-2024. Note that we are using a `log(x + 1)` transform
+(using the `log1p()` function) for the abundance data in all of hour
+models. This is a common transform for abundance data for communities,
+which are typically log-normal, but with zeros. We are keeping the model
+simple for this example, but you could substitute generalized linear
+regression models, zero-inflated models, or other approaches better
+model the distribution of beetle abundances.
 
 ``` r
 # specify and fit models
@@ -369,6 +403,8 @@ fc_null <- mod_fits %>%
   fabletools::forecast(h = "3 years") 
 ```
 
+Next, we can visualize our two null model forecasts.
+
 ``` r
 # visualize the forecast
 fc_null %>% 
@@ -382,6 +418,10 @@ fc_null %>%
 Figure: NULL forecasts of ground beetle abundance at OSBS
 </p>
 
+Note the difference in the scale of the y-axis between the two
+forecasts. How might this affect your use of the two different models as
+null models?
+
 ### 3.5.2 Forecast beetle abundance: regression models
 
 Regression on climate model outputs allows us to make predictions about
@@ -394,8 +434,9 @@ example can be found
 [here](https://openmeteo.substack.com/p/climate-change-api).
 
 So we do not overwhelm the open-meteo API, we have made the climate data
-used in this tutorial available as a Community Data resource on CyVerse
-[here](https://de.cyverse.org/data/ds/iplant/home/shared/NEON/ESA2024/forecasting_beetles_workshop?type=folder&resourceId=af152ca6-dc9b-11ee-aacd-90e2ba675364).
+used in this tutorial available as a [Community Data resource on the
+CyVerse Data
+Store](https://de.cyverse.org/data/ds/iplant/home/shared/NEON/ESA2024/forecasting_beetles_workshop?type=folder&resourceId=af152ca6-dc9b-11ee-aacd-90e2ba675364).
 
 The climate data we’re using in this example were generated by the
 CMCC_CM2_VHR4 climate model.
@@ -418,6 +459,9 @@ clim_wide <- clim_long %>%
   pivot_wider(names_from = variable, values_from = prediction)
 ```
 
+Let’s take a look at the data. The dotted line indicates our
+`forecast_startdate`.
+
 ``` r
 # visualize climate data
 clim_long_ts %>%
@@ -435,7 +479,8 @@ clim_long_ts %>%
 Figure: modeled climate data at OSBS
 </p>
 
-Pick output from one model from the climate ensemble:
+Next, we will break up the climate data into a training set
+(`clim_past`) and a dataset to use for forecasting (`clim_future`).
 
 ``` r
 # subset into past and future datasets, based on forecast_startdate
@@ -448,7 +493,7 @@ clim_future <- clim_wide %>%
          datetime <= forecast_enddate)
 ```
 
-Combine target and climate data to make a training dataset:
+Now, combine target and climate data to make a training dataset.
 
 ``` r
 # combine target and climate data into a training dataset
@@ -456,8 +501,8 @@ targets_clim_train <- targets_train %>%
   left_join(clim_past)
 ```
 
-Specify and fit simple linear regression models using `fable::TSLM()`,
-examine model fit statistics.
+Next, specify and fit simple linear regression models using
+`fable::TSLM()`, and examine the model fit statistics.
 
 ``` r
 # specify and fit model
@@ -480,7 +525,7 @@ fabletools::report(mod_fit_candidates)
     ## # ℹ 6 more variables: AICc <dbl>, BIC <dbl>, CV <dbl>, deviance <dbl>,
     ## #   df.residual <int>, rank <int>
 
-Plot the predicted versus observed abundance data:
+Now, plot the predicted versus observed abundance data.
 
 ``` r
 # visualize model fit
@@ -562,6 +607,8 @@ Figure: TSLM forecast of beelte abundance at OSBS
 # an official entry to the challenge
 ```
 
+Does this forecast seem reasonable?
+
 ## 3.6 How to submit a forecast to the NEON Forecast Challenge
 
 Detailed guidelines on how to submit a forecast to the NEON Forecast
@@ -617,8 +664,6 @@ To submit our example forecast, we can take the output from the
 `neon4cast::efi_format()` to format the output for submissions to The
 Challenge. We also need to add a few additional columns.
 
-Make sure all the required columns are included in the forecast output.
-
 ``` r
 # update dataframe of model output for submission
 fc_best_lm_efi <- fc_best_lm %>% 
@@ -640,12 +685,12 @@ head(fc_best_lm_efi)
     ## # A tibble: 6 × 10
     ##   datetime   site_id parameter model_id    family variable prediction project_id
     ##   <date>     <chr>   <chr>     <chr>       <chr>  <chr>         <dbl> <chr>     
-    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…     0.0376 neon4cast 
-    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…     0.0476 neon4cast 
-    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…    -0.0509 neon4cast 
-    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…     0.116  neon4cast 
-    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…    -0.123  neon4cast 
-    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…     0.0524 neon4cast 
+    ## 1 2022-01-01 OSBS    1         bet_abund_… ensem… abundan…    0.0691  neon4cast 
+    ## 2 2022-01-01 OSBS    2         bet_abund_… ensem… abundan…   -0.00968 neon4cast 
+    ## 3 2022-01-01 OSBS    3         bet_abund_… ensem… abundan…    0.164   neon4cast 
+    ## 4 2022-01-01 OSBS    4         bet_abund_… ensem… abundan…    0.0942  neon4cast 
+    ## 5 2022-01-01 OSBS    5         bet_abund_… ensem… abundan…    0.146   neon4cast 
+    ## 6 2022-01-01 OSBS    6         bet_abund_… ensem… abundan…    0.0499  neon4cast 
     ## # ℹ 2 more variables: reference_datetime <chr>, duration <chr>
 
 ``` r
@@ -665,7 +710,13 @@ Figure: TSLM forecast submission file for OSBS, parameter indicates
 emsemble member
 </p>
 
-Here is how to actually submit the file to The Challenge:
+Lastly, if you feel so inclined, you can submit your forecast outputs
+file as an entry to The Challenge to be scored. If you want to submit a
+file, you will (1) need to [register your
+model](https://forms.gle/kg2Vkpho9BoMXSy57) and (2) you cannot have the
+word “example” in your `filename` or `model_id`. In the example below,
+we are including the “example” text string in the file and model names
+so it is not evaluated as part of the challenge.
 
 ``` r
 # file name format is: theme_name-year-month-day-model_id.csv
@@ -787,8 +838,8 @@ head(mod_scores)
     ## #   quantile10 <dbl>, horizon <drtn>
 
 Are these scores better than our null models? Here, we will score the
-`mod_mean` and `mod_naive`, and combine the null model scores with the
-scores for our `best_lm` forecast above. Then we can compare.
+`mod_mean` and `mod_naive` models, and combine the null model scores
+with the scores for our `best_lm` forecast above. Then we can compare.
 
 ``` r
 # get scores for the mean and naive models
@@ -817,6 +868,9 @@ all_mod_scores <- bind_rows(
   mod_scores %>% mutate(
     reference_datetime = as.character(reference_datetime)))
 ```
+
+Let’s plot the scores. Remember, lower scores indicate better forecast
+accuracy.
 
 ``` r
 all_mod_scores %>%

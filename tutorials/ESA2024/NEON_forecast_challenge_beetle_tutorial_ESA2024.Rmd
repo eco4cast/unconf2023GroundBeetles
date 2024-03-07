@@ -17,9 +17,9 @@ knitr::opts_chunk$set(eval=TRUE, error=FALSE, warning=FALSE, message=FALSE)
 ## Learning objectives  
 
  * Overview of the [Beetle Communities](https://projects.ecoforecast.org/neon4cast-docs/Beetles.html) theme for the [NEON Ecological Forecast Challenge](https://projects.ecoforecast.org/neon4cast-ci/)
- * How to create a simple forecast for the Beetle Communities theme.
- * How to submit/score a forecast to evaluate its accuracy.
- * How to use the NEON Forecast Challenge resources in your research and teaching.
+ * How to create a simple forecast for the Beetle Communities theme
+ * How to submit/score a forecast to evaluate its accuracy
+ * How to use the NEON Forecast Challenge resources in your research and teaching
  
 ## Target user groups for this tutorial
 This tutorial is intended to be used by ecological forecasters at any stage of expertise and may be used as a learning tool as an introduction to forecasting properties of ecological populations or communities. Below, we provide code for introductory examples to walk through the entire process of creating and submitting a forecast to the NEON Ecological Forecasting challenge. This includes: 
@@ -114,7 +114,7 @@ site_data <- read_csv("https://raw.githubusercontent.com/eco4cast/neon4cast-targ
 
 For this tutorial, we are going to focus on the [NEON site at Ordway-Swisher Biological Station (OSBS)](https://www.neonscience.org/field-sites/osbs), which is located in Domain 03 (D03) in Florida. 
 
-**When**: Target data are available as early as 2013 at some sites, and data are available at all sites from 2019 on. Because pitfall trap samples need to be sorted and individuals counted and identified, the latency for data publication can be nearly a year. In this tutorial we will train our models on data from 2013-2021 and we will make forecasts for the 2022 season so that we can score them immediately. 
+**When**: Target data are available as early as 2013 at some sites, and data are available at all sites from 2019 on. Pitfall trap deployments are typically two weeks in duration (i.e., a sampling bout lasts two weeks), and traps are collected and redeployed throughout the growing season at each NEON site. Note that the target data for The Challenge are standardized to represent beetle abundance per trap night. Because pitfall trap samples need to be sorted and individuals counted and identified, the latency for data publication can be nearly a year. In this tutorial we will train our models on data from 2013-2021 and we will make forecasts for the 2022 season so that we can score them immediately. 
 
 Check current ground beetle data availability on the [NEON Data Portal](https://data.neonscience.org/data-products/DP1.10022.001#:~:text=last_page-,Availability%20and%20Download,-July%202013%20%E2%80%93%20January).
 
@@ -199,6 +199,10 @@ targets_train <- targets %>%
 
 ## Example forecasts: some simple models
 
+In this tutorial, we will begin by producing two "null model" forecasts using functions available in the `fable` package for R. The `MEAN` null model will forecast abundance based on the historical mean and standard deviation in the training data. The `NAIVE` null model is a random walk model. We will then use the `TSLM` function to create simple linear regression models to predict beetle abundances using daily temperature (mean daily temperature at 2m height) and precipitation (daily cumulative precipitation) estimates produced from CMIP6 climate model runs from 1950-2050. While these data do not represent actual observations of temperature and precipitation at the NEON site, they have been fit to historical data, so past dates in the simulated data should capture general trends at the site and values for future dates should represent a realistic forecast of climate variables into the future. 
+
+An overview of the models we will fit to the data in this tutorial:
+
 * Null models
   - `fable::MEAN()`: Historical mean and standard deviation
   - `fable::NAIVE()`: Random walk
@@ -206,8 +210,12 @@ targets_train <- targets %>%
   - Temperature: Daily mean temperature from CMIP6 climate model runs 
   - Precipitation: Daily cumulative precipitation from CMIP6 model runs
   - Temperature + Precipitation
+  
+At the end of this tutorial, we will compare the perfomance of our best regression model against the two null models. 
 
 ### Forecast beetle abundance: null models
+
+Here, we fit our two null models to the training data and then create forecasts for 2022-2024. Note that we are using a `log(x + 1)` transform (using the `log1p()` function) for the abundance data in all of hour models. This is a common transform for abundance data for communities, which are typically log-normal, but with zeros. We are keeping the model simple for this example, but you could substitute generalized linear regression models, zero-inflated models, or other approaches better model the distribution of beetle abundances. 
 ```{r null forecasts}
 # specify and fit models
 # Using a log(x + 1) transform on the abundance data
@@ -222,7 +230,7 @@ fc_null <- mod_fits %>%
   fabletools::forecast(h = "3 years") 
 ```
 
-
+Next, we can visualize our two null model forecasts. 
 ```{r plot null forecast, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: NULL forecasts of ground beetle abundance at OSBS"}
 # visualize the forecast
 fc_null %>% 
@@ -231,11 +239,13 @@ fc_null %>%
   theme_bw()
 ```
 
+Note the difference in the scale of the y-axis between the two forecasts. How might this affect your use of the two different models as null models?
+
 ### Forecast beetle abundance: regression models
 
 Regression on climate model outputs allows us to make predictions about future field seasons based on CMIP6 projections. We downloaded climate model outputs from https://open-meto.com using the `RopenMeto` package, which you can install using: `remotes::install_github("FLARE-forecast/RopenMeteo")`. More information about the simulations that produced the climate drivers used in this example can be found [here](https://openmeteo.substack.com/p/climate-change-api). 
 
-So we do not overwhelm the open-meteo API, we have made the climate data used in this tutorial available as a Community Data resource on CyVerse [here](https://de.cyverse.org/data/ds/iplant/home/shared/NEON/ESA2024/forecasting_beetles_workshop?type=folder&resourceId=af152ca6-dc9b-11ee-aacd-90e2ba675364).
+So we do not overwhelm the open-meteo API, we have made the climate data used in this tutorial available as a [Community Data resource on the CyVerse Data Store](https://de.cyverse.org/data/ds/iplant/home/shared/NEON/ESA2024/forecasting_beetles_workshop?type=folder&resourceId=af152ca6-dc9b-11ee-aacd-90e2ba675364).
 
 The climate data we're using in this example were generated by the CMCC_CM2_VHR4 climate model.
 
@@ -258,6 +268,7 @@ clim_wide <- clim_long %>%
   pivot_wider(names_from = variable, values_from = prediction)
 ```
 
+Let's take a look at the data. The dotted line indicates our `forecast_startdate`. 
 ```{r plot climate data, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: modeled climate data at OSBS"}
 # visualize climate data
 clim_long_ts %>%
@@ -272,8 +283,7 @@ clim_long_ts %>%
 ```
 
 
-Pick output from one model from the climate ensemble:
-
+Next, we will break up the climate data into a training set (`clim_past`) and a dataset to use for forecasting (`clim_future`). 
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
 # subset into past and future datasets, based on forecast_startdate
 clim_past <- clim_wide %>%
@@ -287,14 +297,14 @@ clim_future <- clim_wide %>%
 ```
 
 
-Combine target and climate data to make a training dataset:
+Now, combine target and climate data to make a training dataset.
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
 # combine target and climate data into a training dataset
 targets_clim_train <- targets_train %>%
   left_join(clim_past)
 ```
 
-Specify and fit simple linear regression models using `fable::TSLM()`, examine model fit statistics. 
+Next, specify and fit simple linear regression models using `fable::TSLM()`, and examine the model fit statistics. 
 ```{r eval=TRUE, echo = TRUE, error=FALSE, warning=FALSE, message=FALSE}
 # specify and fit model
 mod_fit_candidates <- targets_clim_train %>%
@@ -307,7 +317,7 @@ mod_fit_candidates <- targets_clim_train %>%
 fabletools::report(mod_fit_candidates)
 ```
 
-Plot the predicted versus observed abundance data:
+Now, plot the predicted versus observed abundance data.
 ```{r plot tslm modeled vs observed, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: TSLM predictions of beetle abundances at OSBS compared against observed data"}
 # visualize model fit
 # augment reformats model output into a tsibble for easier plotting
@@ -335,7 +345,6 @@ fc_best_lm <- mod_best_lm %>%
       as_tsibble(index = datetime)) 
 ```
 
-
 Visualize the forecast.
 ```{r plot tslm forecast, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: TSLM forecast of beelte abundance at OSBS"}
 # visualize the forecast
@@ -352,6 +361,7 @@ fc_best_lm %>%
 # an official entry to the challenge
 ```
 
+Does this forecast seem reasonable? 
 
 ## How to submit a forecast to the NEON Forecast Challenge
 
@@ -378,8 +388,6 @@ Detailed guidelines on how to submit a forecast to the NEON Forecast Challenge c
  * `prediction`: forecasted value for the parameter in the parameter column
 
 To submit our example forecast, we can take the output from the `fabletools::forecast()` function we used above and feed it into `neon4cast::efi_format()` to format the output for submissions to The Challenge. We also need to add a few additional columns. 
-
-Make sure all the required columns are included in the forecast output. 
 ```{r format for efi submission}
 # update dataframe of model output for submission
 fc_best_lm_efi <- fc_best_lm %>% 
@@ -408,7 +416,7 @@ fc_best_lm_efi %>%
   theme_bw()
 ```
 
-Here is how to actually submit the file to The Challenge:
+Lastly, if you feel so inclined, you can submit your forecast outputs file as an entry to The Challenge to be scored. If you want to submit a file, you will (1) need to [register your model](https://forms.gle/kg2Vkpho9BoMXSy57) and (2) you cannot have the word "example" in your `filename` or `model_id`. In the example below, we are including the "example" text string in the file and model names so it is not evaluated as part of the challenge. 
 ```{r submit forecast to efi, eval=F}
 # file name format is: theme_name-year-month-day-model_id.csv
 
@@ -501,7 +509,7 @@ mod_scores <- score(
 head(mod_scores)
 ```
 
-Are these scores better than our null models? Here, we will score the `mod_mean` and `mod_naive`, and combine the null model scores with the scores for our `best_lm` forecast above. Then we can compare. 
+Are these scores better than our null models? Here, we will score the `mod_mean` and `mod_naive` models, and combine the null model scores with the scores for our `best_lm` forecast above. Then we can compare. 
 ```{r getting null model scores}
 # get scores for the mean and naive models
 # the fc_null object has scores from both models
@@ -530,6 +538,7 @@ all_mod_scores <- bind_rows(
     reference_datetime = as.character(reference_datetime)))
 ```
 
+Let's plot the scores. Remember, lower scores indicate better forecast accuracy. 
 ```{r plot forecast scores, fig.height = 4, fig.width = 8, fig.align = "center", fig.cap="Figure: Forecast scores (CRPS) for models predicting beetle abundance at the OSBS NEON site during the 2022 field season"}
 all_mod_scores %>%
   ggplot(aes(datetime, crps, color = model_id)) +
