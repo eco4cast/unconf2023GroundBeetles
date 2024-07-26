@@ -1,6 +1,6 @@
 ---
 title: "ESA 2024 Workshop: NEON Ecological Forecast Challenge - Ground Beetles"
-author: "Eric R. Sokol and the EFI RCN 2023 Ground Beetle Group"
+author: "Eric R. Sokol and the EFI RCN 2023 Ground Beetle Group. Additional edits from Ryan McClure"
 output:
   md_document: 
     variant: markdown_github
@@ -549,13 +549,12 @@ Before we visualize the scores, we can visualize the target 2022 observations ag
 ```{r visualize forecasts to raw target data}
 mod_results_to_score_lm <- mod_results_to_score_lm %>% select(site_id,datetime,parameter,model_id,family,variable,prediction)
 
-p3 <- rbind(mod_results_to_score_null,mod_results_to_score_lm) %>% ggplot(., aes(datetime, prediction, color = model_id, group=interaction(parameter, model_id))) +
+rbind(mod_results_to_score_null,mod_results_to_score_lm) %>% ggplot(., aes(datetime, prediction, color = model_id, group=interaction(parameter, model_id))) +
   geom_line(lwd = 1)+
   geom_point(data = targets_2022, aes(datetime, observation), color = "black", size = 6, inherit.aes = F)+
   ylab("Abundance")+
   theme_classic()
 
-p3
 ```
 
 Let's plot the scores. Remember, lower scores indicate better forecast accuracy. 
